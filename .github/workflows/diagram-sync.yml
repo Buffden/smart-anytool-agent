@@ -4,135 +4,74 @@ on:
   pull_request:
     paths:
       - '**/*.mmd'
+      - '**/*.mermaid'
   push:
     branches: [main]
     paths:
       - '**/*.mmd'
+      - '**/*.mermaid'
   workflow_dispatch:
 
 jobs:
-  preview:
-    name: Generate Preview
+  diagrams:
+    name: Generate Diagrams
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Chromium
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends chromium
-
-      - name: Install mermaid-cli
-        run: npm install -g @mermaid-js/mermaid-cli
-
-      - name: Write Puppeteer config
-        run: |
-          echo '{"args":["--no-sandbox"],"executablePath":"/usr/bin/chromium"}' > /tmp/puppeteer-config.json
-
-      - name: Generate changed diagrams
-        run: |
-          CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD | grep -E '\.mmd$' || true)
-          if [ -n "$CHANGED" ]; then
-            while IFS= read -r FILE; do
-              OUT="diagrams/${FILE%.mmd}.svg"
-              mkdir -p "$(dirname "$OUT")"
-              mmdc -i "$FILE" -o "$OUT" --backgroundColor white \
-                --puppeteerConfig /tmp/puppeteer-config.json
-            done <<< "$CHANGED"
-          else
-            echo "No diagram files changed."
-          fi
-
-      - name: Upload diagram previews
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagrams-preview
-          path: diagrams/
-          if-no-files-found: ignore
-
-  commit:
-    name: Generate and Commit
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install Chromium
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends chromium
-
-      - name: Install mermaid-cli
+      - name: Install Mermaid CLI
         run: npm install -g @mermaid-js/mermaid-cli
 
-      - name: Write Puppeteer config
-        run: |
-          echo '{"args":["--no-sandbox"],"executablePath":"/usr/bin/chromium"}' > /tmp/puppeteer-config.json
+      - name: Install diagram-sync
+        run: npm install -g diagram-sync
 
       - name: Generate changed diagrams
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            while IFS= read -r FILE; do
-              OUT="diagrams/${FILE#./}"
-              OUT="${OUT%.mmd}.svg"
-              mkdir -p "$(dirname "$OUT")"
-              mmdc -i "$FILE" -o "$OUT" --backgroundColor white \
-                --puppeteerConfig /tmp/puppeteer-config.json
-            done < <(find . -name '*.mmd' -not -path './.git/*')
-          else
-            BEFORE="${{ github.event.before }}"
-            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-              if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-                CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E '\.mmd$' || true)
-              else
-                CHANGED=$(git ls-tree --name-only -r HEAD | grep -E '\.mmd$' || true)
-              fi
-            else
-              CHANGED=$(git diff --name-only "$BEFORE" "${{ github.sha }}" | grep -E '\.mmd$' || true)
-            fi
+            diagram-sync
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(mmd|mermaid)$' || true)
             if [ -n "$CHANGED" ]; then
-              while IFS= read -r FILE; do
-                OUT="diagrams/${FILE%.mmd}.svg"
-                mkdir -p "$(dirname "$OUT")"
-                mmdc -i "$FILE" -o "$OUT" --backgroundColor white \
-                  --puppeteerConfig /tmp/puppeteer-config.json
-              done <<< "$CHANGED"
+              diagram-sync --files $CHANGED
+            else
+              echo "No diagram files changed."
+            fi
+          else
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.(mmd|mermaid)$' || true)
+            if [ -n "$CHANGED" ]; then
+              diagram-sync --files $CHANGED
             else
               echo "No diagram files changed."
             fi
           fi
 
+      - name: Upload diagram previews
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagrams-preview
+          path: diagrams/
+
       - name: Commit generated diagrams
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p diagrams/
           git add diagrams/
           if git diff --staged --quiet; then
             echo "No diagram changes to commit."
           else
             git commit -m "chore: auto-export diagrams [skip ci]"
-            git pull --rebase origin "${{ github.ref_name }}"
             git push
-          fi
