@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends chromium
 
       - name: Install mermaid-cli
-        run: npm install -g @mermaid-js/mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli@9
 
       - name: Write Puppeteer config
         run: |
@@ -84,7 +84,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends chromium
 
       - name: Install mermaid-cli
-        run: npm install -g @mermaid-js/mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli@9
 
       - name: Write Puppeteer config
         run: |
