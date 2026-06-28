@@ -28,17 +28,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Chromium
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends chromium
-
       - name: Install mermaid-cli
         run: npm install -g @mermaid-js/mermaid-cli@9
 
       - name: Write Puppeteer config
         run: |
-          echo '{"args":["--no-sandbox"],"executablePath":"/usr/bin/chromium"}' > /tmp/puppeteer-config.json
+          echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
 
       - name: Generate changed diagrams
         run: |
@@ -78,17 +73,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Chromium
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends chromium
-
       - name: Install mermaid-cli
         run: npm install -g @mermaid-js/mermaid-cli@9
 
       - name: Write Puppeteer config
         run: |
-          echo '{"args":["--no-sandbox"],"executablePath":"/usr/bin/chromium"}' > /tmp/puppeteer-config.json
+          echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
 
       - name: Generate changed diagrams
         run: |
