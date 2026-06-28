@@ -66,10 +66,10 @@ flowchart LR
 git clone https://github.com/Buffden/smart-anytool-agent
 cd smart-anytool-agent
 
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-pip install -r requirements.txt
+pip3 install -e .
 
 cp .env.example .env
 # Add your OPENAI_API_KEY to .env
