@@ -1,0 +1,34 @@
+%%{init: {"flowchart": {"curve": "step"}} }%%
+flowchart LR
+
+    subgraph external["External"]
+        openai(["OpenAI API\ngpt-4o-mini"])
+    end
+
+    subgraph pipeline["Agent Pipeline"]
+        direction LR
+        main["main.py\nCLI / REPL"]
+        smart["SMART Layer\nsmart.py · ACL 2025"]
+        retriever["AnyTool Layer\nretriever.py · ICML 2024"]
+        schemas["Tool Schemas\nschemas.py"]
+        agent["Agent Loop\nagent.py"]
+        validation["Validate + Dispatch\nvalidation.py"]
+        tools["Tools\nweather · calculator · search"]
+    end
+
+    User(["👤 User"])
+
+    User -->|question| main
+    main -->|question| smart
+    smart -->|route to tools| retriever
+    retriever <-->|fetch / filtered schemas| schemas
+    retriever -->|question + schemas| agent
+    agent -->|tool name + raw args| validation
+    validation <-->|dispatch / result| tools
+    validation -->|result dict| agent
+    agent -->|final answer| main
+    main -->|response| User
+
+    smart -->|self-awareness check| openai
+    retriever -->|category selection| openai
+    agent -->|messages + tool schemas| openai
