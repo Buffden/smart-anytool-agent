@@ -1,4 +1,5 @@
 import httpx
+import ast 
 from duckduckgo_search import DDGS
 
 from config import settings
@@ -52,3 +53,30 @@ def web_search(query: str, num_results: int = settings.web_search_default_result
 
     except Exception as e:
         return [{"error": f"Search failed: {e}"}]
+
+ALLOWED_NODES = {                                                                                         
+    ast.Expression,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow, ast.Mod,
+    ast.USub,
+    ast.Constant,
+}
+
+def calculator(expression: str) -> dict:
+    try:
+        tree = ast.parse(expression, mode="eval")
+
+        for node in ast.walk(tree):
+            if type(node) not in ALLOWED_NODES:
+                return {"error": f"Unsafe expression: {type(node).__name__} is not allowed"}
+            if isinstance(node, ast.Constant) and not isinstance(node.value, (int, float)):
+                return {"error": f"Unsafe expression: only numeric constants are allowed"}
+        
+        result = eval(compile(tree, filename="", mode="eval"))
+        return { "expression": expression, "result": result }
+
+    except ZeroDivisionError:
+        return {"error": "Division by zero"}
+    except SyntaxError:
+        return {"error": "Invalid expression"}
