@@ -1,12 +1,14 @@
 import httpx
 from duckduckgo_search import DDGS
 
+from config import settings
 
-def get_weather(location: str, unit: str = "celsius") -> dict:
-    url = f"https://wttr.in/{location}?format=j1"
+
+def get_weather(location: str, unit: str = settings.weather_default_unit) -> dict:
+    url = settings.weather_api_url.format(location=location)
 
     try:
-        response = httpx.get(url, timeout = 10)
+        response = httpx.get(url, timeout=settings.http_timeout)
         response.raise_for_status()
         data = response.json()
 
@@ -34,7 +36,7 @@ def get_weather(location: str, unit: str = "celsius") -> dict:
         return {"error": f"Unexpected error: {e}"}
 
 
-def web_search(query: str, num_results: int = 5) -> list[dict]:
+def web_search(query: str, num_results: int = settings.web_search_default_results) -> list[dict]:
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=num_results))
