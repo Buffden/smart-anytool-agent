@@ -4,7 +4,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str = ""
-
+    openai_model: str = "gpt-4o-mini"
+    openai_temperature: float = 0.0
+    
     # Weather tool
     weather_api_url: str = "https://wttr.in/{location}?format=j1"
     http_timeout: int = 10
