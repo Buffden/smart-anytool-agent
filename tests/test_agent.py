@@ -122,3 +122,57 @@ def test_iteration_limit_does_not_raise():
 
     assert isinstance(result, str)
 
+
+# parallel tool calls
+
+def test_parallel_tool_calls_both_dispatched():
+    call_1 = make_tool_call("calculator", '{"expression": "1+1"}', call_id="id_1")
+    call_2 = make_tool_call("get_weather", '{"location": "Tokyo"}', call_id="id_2")
+    tool_response = make_response(tool_calls=[call_1, call_2])
+    final_response = make_response(content="Done", tool_calls=None)
+
+    with patch("agent.client.chat.completions.create", side_effect=[tool_response, final_response]):
+        with patch("agent.dispatch", return_value={"result": "ok"}) as mock_dispatch:
+            solve("question", tools=[])
+
+    assert mock_dispatch.call_count == 2
+
+def test_parallel_results_both_appended_before_next_call():
+    call_1 = make_tool_call("calculator", '{"expression": "1+1"}', call_id="id_1")
+    call_2 = make_tool_call("get_weather", '{"location": "Tokyo"}', call_id="id_2")
+    tool_response = make_response(tool_calls=[call_1, call_2])
+    final_response = make_response(content="Done", tool_calls=None)
+
+    captured = []
+
+    def capture_create(**kwargs):
+        captured.append(list(kwargs["messages"]))
+        return tool_response if len(captured) == 1 else final_response
+
+    with patch("agent.client.chat.completions.create", side_effect=capture_create):
+        with patch("agent.dispatch", return_value={"result": "ok"}):
+            solve("question", tools=[])
+
+    tool_messages = [m for m in captured[1] if isinstance(m, dict) and m.get("role") == "tool"]
+    assert len(tool_messages) == 2
+
+def test_partial_failure_still_appends_all_results_and_continues():
+    call_1 = make_tool_call("calculator", '{"expression": "1+1"}', call_id="id_1")
+    call_2 = make_tool_call("get_weather", '{"location": "Tokyo"}', call_id="id_2")
+    tool_response = make_response(tool_calls=[call_1, call_2])
+    final_response = make_response(content="Done", tool_calls=None)
+
+    captured = []
+
+    def capture_create(**kwargs):
+        captured.append(list(kwargs["messages"]))
+        return tool_response if len(captured) == 1 else final_response
+
+    with patch("agent.client.chat.completions.create", side_effect=capture_create):
+        with patch("agent.dispatch", side_effect=[{"result": 2}, {"error": "not found"}]):
+            result = solve("question", tools=[])
+
+    assert result == "Done"
+    tool_messages = [m for m in captured[1] if isinstance(m, dict) and m.get("role") == "tool"]
+    assert len(tool_messages) == 2
+
