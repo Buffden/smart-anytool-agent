@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # Web search tool
     web_search_default_results: int = 5
 
+    # Agent loop
+    agent_max_iterations: int = 5
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
