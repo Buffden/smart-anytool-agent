@@ -1,0 +1,25 @@
+@startuml self-reflection
+title Self-Reflection on Failure
+
+start
+
+:filter_tools(question)\n-> specific category tools;
+
+repeat
+  :agent.solve(question, tools);
+
+  if (result is None?) then (no - success)
+    :Return answer to user;
+    stop
+  else (yes - failure)
+    :Log warning\n"widening to ALL_TOOLS";
+    :tools = ALL_TOOLS;
+  endif
+
+repeat while (attempt < max_retries?) is (yes)
+-> no;
+
+:Return fallback message\nto user;
+stop
+
+@enduml

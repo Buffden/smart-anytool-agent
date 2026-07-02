@@ -5,11 +5,13 @@ on:
     paths:
       - '**/*.mmd'
       - '**/*.mermaid'
+      - '**/*.puml'
   push:
     branches: [main]
     paths:
       - '**/*.mmd'
       - '**/*.mermaid'
+      - '**/*.puml'
   workflow_dispatch:
 
 jobs:
@@ -66,6 +68,95 @@ jobs:
 
       - name: Commit generated diagrams
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add diagrams/
+          if git diff --staged --quiet; then
+            echo "No diagram changes to commit."
+          else
+            git commit -m "chore: auto-export diagrams [skip ci]"
+            git push
+          fi
+
+  plantuml:
+    name: Generate PlantUML Diagrams
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install PlantUML
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends default-jre-headless plantuml graphviz
+
+      - name: Install diagram-sync
+        run: npm install -g diagram-sync
+
+      - name: Generate changed diagrams
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(puml|plantuml)$' || true)
+          if [ -n "$CHANGED" ]; then
+            diagram-sync --files $CHANGED --config diagram-sync.config.json
+          else
+            echo "No PlantUML files changed."
+          fi
+
+      - name: Upload diagram previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagrams-preview
+          path: diagrams/
+
+  plantuml-commit:
+    name: Generate and Commit PlantUML Diagrams
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install PlantUML
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends default-jre-headless plantuml graphviz
+
+      - name: Install diagram-sync
+        run: npm install -g diagram-sync
+
+      - name: Generate changed diagrams
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            diagram-sync --config diagram-sync.config.json
+          else
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.(puml|plantuml)$' || true)
+            if [ -n "$CHANGED" ]; then
+              diagram-sync --files $CHANGED --config diagram-sync.config.json
+            else
+              echo "No PlantUML files changed."
+            fi
+          fi
+
+      - name: Commit generated diagrams
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

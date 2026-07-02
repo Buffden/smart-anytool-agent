@@ -1,0 +1,32 @@
+@startuml parallel-tool-calls
+title Parallel Tool Calls
+
+start
+
+:LLM returns response\nwith tool_calls = [A, B, C];
+
+:Append assistant message\nwith all tool_calls to messages;
+
+fork
+  :dispatch(call_A);
+  :Append result_A\nto messages;
+fork again
+  :dispatch(call_B);
+  :Append result_B\nto messages;
+fork again
+  :dispatch(call_C);
+  :Append result_C\nto messages;
+end fork
+
+note right
+  All results appended
+  before next LLM call.
+  Partial failure still
+  appends error result.
+end note
+
+:Call LLM with updated messages\n(all results in context);
+
+stop
+
+@enduml
