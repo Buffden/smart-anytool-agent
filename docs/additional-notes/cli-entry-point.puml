@@ -1,0 +1,48 @@
+@startuml cli-entry-point
+title CLI Entry Point (REPL Loop)
+
+start
+
+:Print welcome banner;
+:Parse --verbose / -v flag;
+:configure_logging(verbose);
+
+repeat
+  :input("You: ");
+
+  if (EOFError or KeyboardInterrupt?) then (yes)
+    :Print "Goodbye.";
+    stop
+  endif
+
+  if (input is empty?) then (yes)
+    :Skip;
+  elseif (input is "exit" or "quit"?) then (yes)
+    :Print "Goodbye.";
+    stop
+  else (no)
+    :self_awareness_check(question);
+
+    if (exception raised?) then (yes)
+      :Print clean error message;
+    elseif (needs_tool is False?) then (yes - direct answer)
+      if (verbose?) then (yes)
+        :Print "[SMART] Answering directly";
+      endif
+      :Print answer from SMART layer;
+    else (no - tool needed)
+      if (verbose?) then (yes)
+        :Print "[SMART] Tool required";
+      endif
+      :retriever.run(question);
+      if (exception raised?) then (yes)
+        :Print clean error message;
+      else (no)
+        :Print final answer;
+      endif
+    endif
+  endif
+
+repeat while (loop continues) is (yes)
+
+@enduml

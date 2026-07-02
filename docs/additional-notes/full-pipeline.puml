@@ -1,0 +1,110 @@
+@startuml full-pipeline
+title Smart AnyTool Agent - Full Pipeline Sequence
+
+actor User
+
+box "CLI Layer (Phase 10)" #LightYellow
+  participant "main.py\nrun_cli()" as CLI
+end box
+
+box "SMART Layer (Phase 4)" #LightBlue
+  participant "smart.py\nself_awareness_check()" as SMART
+end box
+
+box "AnyTool Layer (Phases 5-9)" #LightGreen
+  participant "retriever.py\nfilter_tools() / run()" as Retriever
+  participant "agent.py\nsolve()" as Agent
+end box
+
+box "Tool Layer (Phases 1-3, 6)" #LightPink
+  participant "validation.py\ndispatch()" as Validation
+  participant "tools.py\ncalculator / weather / search" as Tools
+end box
+
+participant "OpenAI API" as OpenAI
+
+User -> CLI : start (python main.py)
+CLI --> User : welcome banner
+
+loop REPL — one question per iteration
+
+  User -> CLI : question
+
+  CLI -> SMART : self_awareness_check(question)
+  SMART -> OpenAI : self-awareness prompt\n(JSON mode)
+  OpenAI --> SMART : {needs_tool, answer, reason}
+
+  alt exception in SMART
+    SMART --> CLI : raises Exception
+    CLI --> User : "Sorry, something went wrong: ..."
+
+  else needs_tool = False
+    SMART --> CLI : {needs_tool: False, answer: "..."}
+    opt verbose
+      CLI --> User : "[SMART] Answering directly — <reason>"
+    end
+    CLI --> User : "Agent: <direct answer>"
+
+  else needs_tool = True
+    SMART --> CLI : {needs_tool: True, answer: None}
+    opt verbose
+      CLI --> User : "[SMART] Tool required — <reason>"
+    end
+
+    CLI -> Retriever : run(question)
+
+    Retriever -> OpenAI : tool filter prompt\n(JSON mode)
+    OpenAI --> Retriever : {category, reason}
+    Retriever -> Retriever : select tool subset\n(or ALL_TOOLS if unknown/error)
+
+    loop self-reflection retry (max_retries attempts)
+
+      Retriever -> Agent : solve(question, tools)
+
+      loop agent solver loop (max_iterations)
+
+        Agent -> OpenAI : messages + filtered tool schemas
+        OpenAI --> Agent : response
+
+        alt no tool_calls — final answer
+          Agent --> Retriever : answer string
+        else tool_calls present (parallel, Phase 8)
+          loop for each tool_call in response.tool_calls
+            Agent -> Validation : dispatch(tool_name, raw_args)
+            Validation -> Validation : validate args\n(Pydantic, Phase 6)
+            Validation -> Tools : execute tool
+            Tools --> Validation : result dict
+            Validation --> Agent : result dict
+          end
+          Agent -> Agent : append all tool results\nto messages
+        end
+
+      end
+
+      alt agent returned answer
+        Agent --> Retriever : answer string
+        Retriever --> CLI : answer string
+      else agent returned None (max iterations hit)
+        Retriever -> Retriever : widen tools = ALL_TOOLS\n(self-reflection, Phase 9)
+      end
+
+    end
+
+    alt answer found within retries
+      Retriever --> CLI : final answer
+      CLI --> User : "Agent: <final answer>"
+    else all retries exhausted
+      Retriever --> CLI : fallback message
+      CLI --> User : "Agent: I was unable to find an answer..."
+    end
+
+    alt exception in retriever
+      Retriever --> CLI : raises Exception
+      CLI --> User : "Agent: Sorry, something went wrong: ..."
+    end
+
+  end
+
+end
+
+@enduml

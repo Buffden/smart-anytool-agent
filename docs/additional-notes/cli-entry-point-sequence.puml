@@ -1,0 +1,58 @@
+@startuml cli-entry-point-sequence
+title CLI Entry Point - Sequence Diagram
+
+actor User
+participant "main.py\nrun_cli()" as CLI
+participant "smart.py\nself_awareness_check()" as SMART
+participant "retriever.py\nrun()" as Retriever
+
+User -> CLI : start (python main.py)
+CLI -> CLI : configure_logging(verbose)
+CLI --> User : Print welcome banner
+
+loop REPL
+
+  User -> CLI : input("You: ")
+
+  alt empty string
+    CLI -> CLI : skip — loop again
+
+  else "exit" or "quit"
+    CLI --> User : "Goodbye."
+    CLI -> CLI : break
+
+  else valid question
+    CLI -> SMART : self_awareness_check(question)
+
+    alt exception raised
+      SMART --> CLI : raises Exception
+      CLI --> User : "Sorry, something went wrong: ..."
+
+    else needs_tool = False
+      SMART --> CLI : {needs_tool: False, answer: "...", reason: "..."}
+      opt verbose
+        CLI --> User : "[SMART] Answering directly — reason: ..."
+      end
+      CLI --> User : "Agent: <direct answer>"
+
+    else needs_tool = True
+      SMART --> CLI : {needs_tool: True, answer: None, reason: "..."}
+      opt verbose
+        CLI --> User : "[SMART] Tool required — reason: ..."
+      end
+      CLI -> Retriever : run(question)
+
+      alt exception raised
+        Retriever --> CLI : raises Exception
+        CLI --> User : "Agent: Sorry, something went wrong: ..."
+
+      else answer returned
+        Retriever --> CLI : final answer string
+        CLI --> User : "Agent: <final answer>"
+      end
+    end
+  end
+
+end
+
+@enduml
