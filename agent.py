@@ -27,23 +27,23 @@ def solve(question: str, tools: list[dict]) -> str:
             logger.info("iteration=%d no tool calls, returning answer", iteration)
             return message.content
 
-        # append assistant message with tool call to conversation
+        # append assistant message with tool calls to conversation
         messages.append(message)
 
-        # execute the tool call and append result before next iteration
-        call = message.tool_calls[0]
-        logger.info(
-            "iteration=%d tool=%r args=%r",
-            iteration,
-            call.function.name,
-            call.function.arguments,
-        )
-        result = dispatch(call.function.name, call.function.arguments)
-        messages.append({
-            "role": "tool",
-            "tool_call_id": call.id,
-            "content": json.dumps(result),
-        })
+        # execute every tool call and append results before next iteration
+        for call in message.tool_calls:
+            logger.info(
+                "iteration=%d tool=%r args=%r",
+                iteration,
+                call.function.name,
+                call.function.arguments,
+            )
+            result = dispatch(call.function.name, call.function.arguments)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": call.id,
+                "content": json.dumps(result),
+            })
 
     logger.warning("reached iteration limit of %d", settings.agent_max_iterations)
     return "I was unable to produce an answer within the allowed number of steps."
