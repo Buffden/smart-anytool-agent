@@ -4,6 +4,7 @@ from pathlib import Path
 from openai import OpenAI
 from config import settings
 from schemas import ALL_TOOLS, TOOL_CATEGORIES
+import agent
 
 logger = logging.getLogger(__name__)
 
@@ -37,3 +38,21 @@ def filter_tools(question: str) -> list[dict]:
     except Exception:
         logger.warning("tool filter failed, falling back to ALL_TOOLS")
         return ALL_TOOLS
+
+
+def run(question: str) -> str:
+    tools = filter_tools(question)
+
+    for attempt in range(1, settings.retriever_max_retries + 1):
+        result = agent.solve(question, tools)
+
+        if result is not None:
+            if attempt > 1:
+                logger.info("self-reflection succeeded on attempt=%d", attempt)
+            return result
+
+        # widen tool selection on retry
+        logger.warning("attempt=%d failed, widening to ALL_TOOLS for retry", attempt)
+        tools = ALL_TOOLS
+
+    return "I was unable to find an answer. Please try rephrasing your question."

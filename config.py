@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # Agent loop
     agent_max_iterations: int = 5
 
+    # Self-reflection
+    retriever_max_retries: int = 3
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

@@ -29,7 +29,7 @@ def make_mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
     return mock
 
 
-# get_weather — success
+# get_weather : success
 
 def test_get_weather_returns_structured_data():
     with patch("tools.httpx.get", return_value=make_mock_response(WTTR_RESPONSE)):
@@ -62,7 +62,7 @@ def test_get_weather_temperature_is_int():
     assert isinstance(result["wind_speed_kmph"], int)
 
 
-# get_weather — failure cases
+# get_weather : failure cases
 
 def test_get_weather_city_not_found():
     mock = make_mock_response({}, status_code=404)
@@ -97,7 +97,7 @@ def test_get_weather_does_not_raise():
     assert "error" in result
 
 
-# web_search — success
+# web_search : success
 
 DDGS_RESULTS = [
     {"title": "Result 1", "href": "https://example.com/1", "body": "Snippet 1"},
@@ -145,7 +145,7 @@ def test_web_search_respects_num_results():
     mock_ddgs.text.assert_called_once_with("query", max_results=3)
 
 
-# web_search — failure cases
+# web_search : failure cases
 
 def test_web_search_empty_results():
     mock_ddgs = MagicMock()
