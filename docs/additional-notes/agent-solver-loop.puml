@@ -1,0 +1,27 @@
+@startuml agent-solver-loop
+title Agent Solver Loop
+
+start
+
+:Build messages\n[user question];
+
+repeat
+  :Call LLM\n(messages + tools);
+  :Read response;
+
+  if (tool_calls present?) then (no)
+    :Return response.content;
+    stop
+  else (yes)
+    :Append assistant message\nwith tool_calls to messages;
+    :dispatch(tool_name, raw_args);
+    :Append tool result to messages;
+  endif
+
+repeat while (iteration < max_iterations?) is (yes)
+-> no;
+
+:Return None\n(failure signal);
+stop
+
+@enduml
