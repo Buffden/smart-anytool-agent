@@ -6,8 +6,8 @@ Your only job is to classify the user's question into one of the available tool 
 
 CATEGORIES
 
-computation  — arithmetic, percentages, exponents, or any mathematical calculation
-data_lookup  — current weather, forecasts, live news, recent events, or web searches
+computation  : arithmetic, percentages, exponents, or any mathematical calculation
+data_lookup  : current weather, forecasts, live news, recent events, or web searches
 
 ---
 

@@ -31,7 +31,7 @@ CALCULATOR_SCHEMA = {
         "name": "calculator",
         "description": (
             "Use this tool when the user asks to compute, calculate, or evaluate "
-            "a mathematical expression — arithmetic, percentages, exponents, etc. "
+            "a mathematical expression: arithmetic, percentages, exponents, etc. "
             "Do NOT use for unit conversions or symbolic algebra."
         ),
         "parameters": {
@@ -58,7 +58,7 @@ WEB_SEARCH_SCHEMA = {
             "Use this tool when the user asks for recent news, current events, "
             "facts that may have changed since the model's training cutoff, or "
             "any question that requires live information from the internet. "
-            "Do NOT use for math problems or weather — those have dedicated tools."
+            "Do NOT use for math problems or weather; those have dedicated tools."
         ),
         "parameters": {
             "type": "object",

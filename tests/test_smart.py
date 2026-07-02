@@ -85,7 +85,7 @@ def test_recent_news_requires_tool():
     assert result["needs_tool"] is True
 
 
-# missing keys in model response — safe defaults
+# missing keys in model response : safe defaults
 
 def test_missing_needs_tool_defaults_to_true():
     mock = make_openai_response({"answer": None, "reason": "something"})
