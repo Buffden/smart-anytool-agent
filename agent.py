@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 client = OpenAI(api_key=settings.openai_api_key)
 
 
-def solve(question: str, tools: list[dict]) -> str:
+def solve(question: str, tools: list[dict]) -> str | None:
     messages = [{"role": "user", "content": question}]
 
     for iteration in range(1, settings.agent_max_iterations + 1):
@@ -46,4 +46,4 @@ def solve(question: str, tools: list[dict]) -> str:
             })
 
     logger.warning("reached iteration limit of %d", settings.agent_max_iterations)
-    return "I was unable to produce an answer within the allowed number of steps."
+    return None

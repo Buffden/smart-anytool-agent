@@ -102,7 +102,7 @@ def test_tool_result_matched_by_call_id():
 
 # iteration limit
 
-def test_iteration_limit_returns_fallback():
+def test_iteration_limit_returns_none():
     tool_response = make_response(tool_calls=[make_tool_call("calculator", '{"expression": "1+1"}')])
 
     with patch("agent.client.chat.completions.create", return_value=tool_response):
@@ -110,7 +110,7 @@ def test_iteration_limit_returns_fallback():
             with patch("agent.settings.agent_max_iterations", 2):
                 result = solve("question", tools=[])
 
-    assert "unable" in result.lower()
+    assert result is None
 
 def test_iteration_limit_does_not_raise():
     tool_response = make_response(tool_calls=[make_tool_call("calculator", '{"expression": "1+1"}')])
@@ -120,7 +120,7 @@ def test_iteration_limit_does_not_raise():
             with patch("agent.settings.agent_max_iterations", 2):
                 result = solve("question", tools=[])
 
-    assert isinstance(result, str)
+    assert result is None
 
 
 # parallel tool calls
