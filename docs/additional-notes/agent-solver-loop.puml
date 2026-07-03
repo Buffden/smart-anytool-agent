@@ -1,5 +1,6 @@
 @startuml agent-solver-loop
 title Agent Solver Loop
+skinparam defaultFontSize 14
 
 start
 

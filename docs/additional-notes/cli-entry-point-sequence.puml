@@ -1,5 +1,6 @@
 @startuml cli-entry-point-sequence
 title CLI Entry Point - Sequence Diagram
+skinparam defaultFontSize 14
 
 actor User
 participant "main.py\nrun_cli()" as CLI

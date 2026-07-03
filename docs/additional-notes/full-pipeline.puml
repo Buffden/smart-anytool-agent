@@ -1,5 +1,6 @@
 @startuml full-pipeline
 title Smart AnyTool Agent - Full Pipeline Sequence
+skinparam defaultFontSize 14
 
 actor User
 

@@ -1,5 +1,6 @@
 @startuml parallel-tool-calls
 title Parallel Tool Calls
+skinparam defaultFontSize 14
 
 start
 
