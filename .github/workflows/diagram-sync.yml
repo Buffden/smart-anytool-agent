@@ -3,20 +3,18 @@ name: Generate and Commit Diagrams
 on:
   pull_request:
     paths:
-      - '**/*.mmd'
-      - '**/*.mermaid'
+      - '**/*.excalidraw'
       - '**/*.puml'
   push:
     branches: [main]
     paths:
-      - '**/*.mmd'
-      - '**/*.mermaid'
+      - '**/*.excalidraw'
       - '**/*.puml'
   workflow_dispatch:
 
 jobs:
-  diagrams:
-    name: Generate Diagrams
+  excalidraw:
+    name: Generate Excalidraw Diagrams
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -33,29 +31,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Mermaid CLI
-        run: npm install -g @mermaid-js/mermaid-cli
-
       - name: Install diagram-sync
         run: npm install -g diagram-sync
 
       - name: Generate changed diagrams
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            diagram-sync
+            diagram-sync --config diagram-sync.config.json
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(mmd|mermaid)$' || true)
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.excalidraw$' || true)
             if [ -n "$CHANGED" ]; then
-              diagram-sync --files $CHANGED
+              diagram-sync --files $CHANGED --config diagram-sync.config.json
             else
-              echo "No diagram files changed."
+              echo "No excalidraw files changed."
             fi
           else
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.(mmd|mermaid)$' || true)
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.excalidraw$' || true)
             if [ -n "$CHANGED" ]; then
-              diagram-sync --files $CHANGED
+              diagram-sync --files $CHANGED --config diagram-sync.config.json
             else
-              echo "No diagram files changed."
+              echo "No excalidraw files changed."
             fi
           fi
 
