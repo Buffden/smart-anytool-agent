@@ -19,37 +19,15 @@ Most tool-calling agents dump every available tool at the LLM and hope it picks 
 
 ---
 
-## Architecture
-
-![Architecture](diagrams/docs/architecture.excalidraw.svg)
-
----
-
 ## Diagrams
 
-### Full Pipeline
+### Architecture
+
+![Architecture](diagrams/docs/architecture.svg)
+
+### Full Pipeline Sequence
 
 ![Full Pipeline](diagrams/docs/additional-notes/full-pipeline.svg)
-
-### CLI Entry Point — Activity
-
-![CLI Entry Point](diagrams/docs/additional-notes/cli-entry-point.svg)
-
-### CLI Entry Point — Sequence
-
-![CLI Entry Point Sequence](diagrams/docs/additional-notes/cli-entry-point-sequence.svg)
-
-### Agent Solver Loop
-
-![Agent Solver Loop](diagrams/docs/additional-notes/agent-solver-loop.svg)
-
-### Self-Reflection on Failure
-
-![Self-Reflection](diagrams/docs/additional-notes/self-reflection.svg)
-
-### Parallel Tool Calls
-
-![Parallel Tool Calls](diagrams/docs/additional-notes/parallel-tool-calls.svg)
 
 ---
 
