@@ -6,6 +6,12 @@
       "type": "plantuml",
       "format": "svg",
       "background": "#FFFFFF"
+    },
+    {
+      "name": "excalidraw",
+      "type": "excalidraw",
+      "format": "svg",
+      "background": "#FFFFFF"
     }
   ]
 }

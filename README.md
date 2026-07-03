@@ -21,7 +21,7 @@ Most tool-calling agents dump every available tool at the LLM and hope it picks 
 
 ## Architecture
 
-![Architecture](diagrams/docs/architecture.svg)
+![Architecture](diagrams/docs/architecture.excalidraw.svg)
 
 ---
 
