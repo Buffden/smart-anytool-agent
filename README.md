@@ -21,42 +21,35 @@ Most tool-calling agents dump every available tool at the LLM and hope it picks 
 
 ## Architecture
 
-```mermaid
-%%{init: {"flowchart": {"curve": "step"}} }%%
-flowchart LR
+![Architecture](diagrams/docs/architecture.svg)
 
-    subgraph external["External"]
-        openai(["OpenAI API\ngpt-4o-mini"])
-    end
+---
 
-    subgraph pipeline["Agent Pipeline"]
-        direction LR
-        main["main.py\nCLI / REPL"]
-        smart["SMART Layer\nsmart.py · ACL 2025"]
-        retriever["AnyTool Layer\nretriever.py · ICML 2024"]
-        schemas["Tool Schemas\nschemas.py"]
-        agent["Agent Loop\nagent.py"]
-        validation["Validate + Dispatch\nvalidation.py"]
-        tools["Tools\nweather · calculator · search"]
-    end
+## Diagrams
 
-    User(["👤 User"])
+### Full Pipeline
 
-    User -->|question| main
-    main -->|question| smart
-    smart -->|route to tools| retriever
-    retriever <-->|fetch / filtered schemas| schemas
-    retriever -->|question + schemas| agent
-    agent -->|tool name + raw args| validation
-    validation <-->|dispatch / result| tools
-    validation -->|result dict| agent
-    agent -->|final answer| main
-    main -->|response| User
+![Full Pipeline](diagrams/docs/additional-notes/full-pipeline.svg)
 
-    smart -->|self-awareness check| openai
-    retriever -->|category selection| openai
-    agent -->|messages + tool schemas| openai
-```
+### CLI Entry Point — Activity
+
+![CLI Entry Point](diagrams/docs/additional-notes/cli-entry-point.svg)
+
+### CLI Entry Point — Sequence
+
+![CLI Entry Point Sequence](diagrams/docs/additional-notes/cli-entry-point-sequence.svg)
+
+### Agent Solver Loop
+
+![Agent Solver Loop](diagrams/docs/additional-notes/agent-solver-loop.svg)
+
+### Self-Reflection on Failure
+
+![Self-Reflection](diagrams/docs/additional-notes/self-reflection.svg)
+
+### Parallel Tool Calls
+
+![Parallel Tool Calls](diagrams/docs/additional-notes/parallel-tool-calls.svg)
 
 ---
 
@@ -107,16 +100,16 @@ Agent: [SMART] Tool required - real-time information needed.
 
 | Concept | Source Paper | Status |
 | --- | --- | --- |
-| Self-awareness before tool calling | SMART (ACL 2025) | [ ] |
-| Hierarchical tool filtering | AnyTool (ICML 2024) | [ ] |
-| Self-reflection on failure | AnyTool (ICML 2024) | [ ] |
-| Tool schemas grouped by category | AnyTool (ICML 2024) | [ ] |
-| Agent solver loop | AnyTool (ICML 2024) | [ ] |
-| Parallel tool call handling | AnyTool (ICML 2024) | [ ] |
-| Real-world API tools (weather, search) | AnyTool (ICML 2024) | [ ] |
-| Safe expression evaluation | Engineering best practice | [ ] |
-| Pydantic argument validation + dispatch | Engineering best practice | [ ] |
-| CLI entry point | Project infrastructure | [ ] |
+| Self-awareness before tool calling | SMART (ACL 2025) | [x] |
+| Hierarchical tool filtering | AnyTool (ICML 2024) | [x] |
+| Self-reflection on failure | AnyTool (ICML 2024) | [x] |
+| Tool schemas grouped by category | AnyTool (ICML 2024) | [x] |
+| Agent solver loop | AnyTool (ICML 2024) | [x] |
+| Parallel tool call handling | AnyTool (ICML 2024) | [x] |
+| Real-world API tools (weather, search) | AnyTool (ICML 2024) | [x] |
+| Safe expression evaluation | Engineering best practice | [x] |
+| Pydantic argument validation + dispatch | Engineering best practice | [x] |
+| CLI entry point | Project infrastructure | [x] |
 
 ---
 
