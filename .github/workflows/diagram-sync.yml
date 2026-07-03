@@ -3,79 +3,20 @@ name: Generate and Commit Diagrams
 on:
   pull_request:
     paths:
-      - '**/*.excalidraw'
       - '**/*.puml'
+      - '**/*.plantuml'
+      - '**/*.excalidraw'
   push:
     branches: [main]
     paths:
-      - '**/*.excalidraw'
       - '**/*.puml'
+      - '**/*.plantuml'
+      - '**/*.excalidraw'
   workflow_dispatch:
 
 jobs:
-  excalidraw:
-    name: Generate Excalidraw Diagrams
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install diagram-sync
-        run: npm install -g diagram-sync
-
-      - name: Generate changed diagrams
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            diagram-sync --config diagram-sync.config.json
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.excalidraw$' || true)
-            if [ -n "$CHANGED" ]; then
-              diagram-sync --files $CHANGED --config diagram-sync.config.json
-            else
-              echo "No excalidraw files changed."
-            fi
-          else
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.excalidraw$' || true)
-            if [ -n "$CHANGED" ]; then
-              diagram-sync --files $CHANGED --config diagram-sync.config.json
-            else
-              echo "No excalidraw files changed."
-            fi
-          fi
-
-      - name: Upload diagram previews
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagrams-preview
-          path: diagrams/
-
-      - name: Commit generated diagrams
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add diagrams/
-          if git diff --staged --quiet; then
-            echo "No diagram changes to commit."
-          else
-            git commit -m "chore: auto-export diagrams [skip ci]"
-            git push
-          fi
-
-  plantuml:
-    name: Generate PlantUML Diagrams
+  preview:
+    name: Generate Preview
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
 
@@ -94,16 +35,19 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends default-jre-headless plantuml graphviz
 
+      - name: Install Excalidraw CLI
+        run: npm install -g @swiftlysingh/excalidraw-cli
+
       - name: Install diagram-sync
         run: npm install -g diagram-sync
 
       - name: Generate changed diagrams
         run: |
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(puml|plantuml)$' || true)
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(puml|plantuml|excalidraw)$' || true)
           if [ -n "$CHANGED" ]; then
             diagram-sync --files $CHANGED --config diagram-sync.config.json
           else
-            echo "No PlantUML files changed."
+            echo "No diagram files changed."
           fi
 
       - name: Upload diagram previews
@@ -112,8 +56,8 @@ jobs:
           name: diagrams-preview
           path: diagrams/
 
-  plantuml-commit:
-    name: Generate and Commit PlantUML Diagrams
+  commit:
+    name: Generate and Commit
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
@@ -135,6 +79,9 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends default-jre-headless plantuml graphviz
 
+      - name: Install Excalidraw CLI
+        run: npm install -g @swiftlysingh/excalidraw-cli
+
       - name: Install diagram-sync
         run: npm install -g diagram-sync
 
@@ -143,11 +90,11 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             diagram-sync --config diagram-sync.config.json
           else
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.(puml|plantuml)$' || true)
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.(puml|plantuml|excalidraw)$' || true)
             if [ -n "$CHANGED" ]; then
               diagram-sync --files $CHANGED --config diagram-sync.config.json
             else
-              echo "No PlantUML files changed."
+              echo "No diagram files changed."
             fi
           fi
 

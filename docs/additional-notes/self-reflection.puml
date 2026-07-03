@@ -1,5 +1,6 @@
 @startuml self-reflection
 title Self-Reflection on Failure
+skinparam defaultFontSize 14
 
 start
 
