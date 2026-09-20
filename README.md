@@ -70,7 +70,15 @@ Agent: [SMART] Tool required - real-time information needed.
        [AnyTool] Selected category: search tools.
        [Tool] web_search(query=latest research LLM agents 2025)
        ...
+
+You: Analyze the sentiment of "I loved this movie, best I've seen all year."
+Agent: [SMART] Tool required - specialized NLP task.
+       [AnyTool] Selected category: text_intelligence tools.
+       [Tool] analyze_text(text="I loved this movie, best I've seen all year.")
+       Sentiment: positive. Key topics: movie review, praise.
 ```
+
+The `text_intelligence` category requires the `ai-text-intelligence-dashboard` Spring Boot backend running on `http://localhost:8080` - see `config.py`'s `backend_base_url`.
 
 ---
 
@@ -88,6 +96,7 @@ Agent: [SMART] Tool required - real-time information needed.
 | Safe expression evaluation | Engineering best practice | [x] |
 | Pydantic argument validation + dispatch | Engineering best practice | [x] |
 | CLI entry point | Project infrastructure | [x] |
+| Backend-connected tools (`text_intelligence`) | Project infrastructure | [x] |
 
 ---
 
@@ -96,9 +105,10 @@ Agent: [SMART] Tool required - real-time information needed.
 - Python 3.12
 - OpenAI API (`gpt-4o-mini`)
 - Pydantic - argument validation
-- httpx - async HTTP for weather API
+- httpx - async HTTP for weather API and the text_intelligence backend
 - duckduckgo-search - web search, no API key required
 - Open-Meteo API - weather, no API key required
+- ai-text-intelligence-dashboard - Spring Boot backend for text_intelligence tools (analyze, classify, chat)
 
 ---
 

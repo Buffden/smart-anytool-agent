@@ -19,7 +19,7 @@ end box
 
 box "Tool Layer (Phases 1-3, 6)" #LightPink
   participant "validation.py\ndispatch()" as Validation
-  participant "tools.py\ncalculator / weather / search" as Tools
+  participant "tools.py\ncalculator / weather / search /\ntext_intelligence (backend API)" as Tools
 end box
 
 participant "OpenAI API" as OpenAI
