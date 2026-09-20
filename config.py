@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     # Web search tool
     web_search_default_results: int = 5
 
+    # Backend API tools
+    backend_base_url: str = "http://localhost:8080"
+    backend_http_timeout: int = 10
+
     # Agent loop
     agent_max_iterations: int = 5
 

@@ -1,5 +1,5 @@
 import httpx
-import ast 
+import ast
 from duckduckgo_search import DDGS
 
 from config import settings
@@ -72,7 +72,7 @@ def calculator(expression: str) -> dict:
                 return {"error": f"Unsafe expression: {type(node).__name__} is not allowed"}
             if isinstance(node, ast.Constant) and not isinstance(node.value, (int, float)):
                 return {"error": f"Unsafe expression: only numeric constants are allowed"}
-        
+
         result = eval(compile(tree, filename="", mode="eval"))
         return { "expression": expression, "result": result }
 
@@ -80,3 +80,50 @@ def calculator(expression: str) -> dict:
         return {"error": "Division by zero"}
     except SyntaxError:
         return {"error": "Invalid expression"}
+
+
+def _call_backend(method: str, path: str, **kwargs) -> dict:
+    try:
+        response = httpx.request(
+            method,
+            f"{settings.backend_base_url}{path}",
+            timeout=settings.backend_http_timeout,
+            **kwargs,
+        )
+    except httpx.ConnectError:
+        return {"error": "Backend is unreachable. Is it running?", "kind": "transport"}
+    except httpx.TimeoutException:
+        return {"error": "Backend did not respond in time.", "kind": "transport"}
+
+    if response.status_code == 400:
+        return {"error": response.json(), "kind": "validation"}
+    if response.status_code == 404:
+        return {"error": "Not found.", "kind": "not_found"}
+    if response.status_code >= 500:
+        return {"error": f"Backend error ({response.status_code}).", "kind": "server"}
+
+    return response.json()
+
+
+def analyze_text(text: str) -> dict:
+    return _call_backend("POST", "/api/analyze", json={"text": text})
+
+
+def classify_text(text: str) -> dict:
+    return _call_backend("POST", "/api/classify", json={"text": text})
+
+
+def send_chat_message(message: str, conversation_id: str | None = None) -> dict:
+    return _call_backend(
+        "POST",
+        "/api/chat",
+        json={"conversationId": conversation_id, "message": message},
+    )
+
+
+def get_chat_history(conversation_id: str) -> list | dict:
+    return _call_backend("GET", f"/api/chat/{conversation_id}/history")
+
+
+def list_conversations() -> list | dict:
+    return _call_backend("GET", "/api/chat/conversations")

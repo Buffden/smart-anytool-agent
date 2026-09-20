@@ -39,6 +39,25 @@ def test_missing_required_arg_calculator():
     result = dispatch("calculator", '{}')
     assert "error" in result
 
+def test_missing_required_arg_analyze_text():
+    assert "error" in dispatch("analyze_text", '{}')
+
+def test_missing_required_arg_classify_text():
+    assert "error" in dispatch("classify_text", '{}')
+
+def test_missing_required_arg_send_chat_message():
+    assert "error" in dispatch("send_chat_message", '{}')
+
+def test_missing_required_arg_get_chat_history():
+    assert "error" in dispatch("get_chat_history", '{}')
+
+def test_analyze_text_rejects_empty_string():
+    assert "error" in dispatch("analyze_text", json.dumps({"text": ""}))
+
+def test_analyze_text_rejects_overlong_text():
+    result = dispatch("analyze_text", json.dumps({"text": "x" * 5001}))
+    assert "error" in result
+
 
 # dispatch wrong argument types
 
@@ -79,6 +98,28 @@ def test_valid_calculator_call():
         result = dispatch("calculator", json.dumps({"expression": "2+2"}))
     mock.assert_called_once_with(expression="2+2")
     assert result["result"] == 4
+
+def test_valid_analyze_text_call():
+    with patch("tools.analyze_text", return_value={"summary": "..."}) as mock:
+        result = dispatch("analyze_text", json.dumps({"text": "some text"}))
+    mock.assert_called_once_with(text="some text")
+    assert result["summary"] == "..."
+
+def test_valid_send_chat_message_call_without_conversation_id():
+    with patch("tools.send_chat_message", return_value={"conversationId": "abc-123"}) as mock:
+        dispatch("send_chat_message", json.dumps({"message": "hi"}))
+    mock.assert_called_once_with(message="hi", conversation_id=None)
+
+def test_valid_send_chat_message_call_with_conversation_id():
+    with patch("tools.send_chat_message", return_value={"conversationId": "abc-123"}) as mock:
+        dispatch("send_chat_message", json.dumps({"message": "hi", "conversation_id": "abc-123"}))
+    mock.assert_called_once_with(message="hi", conversation_id="abc-123")
+
+def test_valid_list_conversations_call():
+    with patch("tools.list_conversations", return_value=[]) as mock:
+        result = dispatch("list_conversations", '{}')
+    mock.assert_called_once_with()
+    assert result == []
 
 
 # error and success results have the same shape

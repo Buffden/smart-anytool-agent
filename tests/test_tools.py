@@ -2,7 +2,15 @@ import httpx
 import pytest
 from unittest.mock import MagicMock, patch
 
-from tools import get_weather, web_search
+from tools import (
+    analyze_text,
+    classify_text,
+    get_chat_history,
+    get_weather,
+    list_conversations,
+    send_chat_message,
+    web_search,
+)
 
 # Fixtures
 
@@ -172,3 +180,104 @@ def test_web_search_does_not_raise():
         results = web_search("query")
 
     assert isinstance(results, list)
+
+
+# backend-connected tools : success
+
+def test_analyze_text_returns_backend_response():
+    body = {"summary": "...", "sentiment": "neutral", "confidence": 0.9,
+             "key_topics": ["a"], "word_count_estimate": 42}
+    with patch("tools.httpx.request", return_value=make_mock_response(body)):
+        result = analyze_text("some text")
+
+    assert result == body
+
+
+def test_classify_text_returns_backend_response():
+    body = {"category": "technology", "confidence": 0.8, "reasoning": "..."}
+    with patch("tools.httpx.request", return_value=make_mock_response(body)):
+        result = classify_text("some text")
+
+    assert result == body
+
+
+def test_send_chat_message_sends_conversation_id_in_payload():
+    body = {"conversationId": "abc-123", "reply": "..."}
+    with patch("tools.httpx.request", return_value=make_mock_response(body)) as mock:
+        result = send_chat_message("hi", conversation_id="abc-123")
+
+    assert result == body
+    _, kwargs = mock.call_args
+    assert kwargs["json"] == {"conversationId": "abc-123", "message": "hi"}
+
+
+def test_send_chat_message_starts_new_conversation_when_id_omitted():
+    body = {"conversationId": "new-id", "reply": "..."}
+    with patch("tools.httpx.request", return_value=make_mock_response(body)) as mock:
+        send_chat_message("hi")
+
+    _, kwargs = mock.call_args
+    assert kwargs["json"]["conversationId"] is None
+
+
+def test_list_conversations_returns_list():
+    body = [{"id": "abc-123", "title": "t", "createdAt": "...", "messageCount": 2}]
+    with patch("tools.httpx.request", return_value=make_mock_response(body)):
+        result = list_conversations()
+
+    assert result == body
+
+
+# backend-connected tools : failure cases
+
+def test_backend_connect_error_returns_transport_kind():
+    with patch("tools.httpx.request", side_effect=httpx.ConnectError("refused")):
+        result = analyze_text("some text")
+
+    assert result["kind"] == "transport"
+
+
+def test_backend_timeout_returns_transport_kind():
+    with patch("tools.httpx.request", side_effect=httpx.TimeoutException("slow")):
+        result = analyze_text("some text")
+
+    assert result["kind"] == "transport"
+
+
+def test_backend_400_returns_validation_kind():
+    mock = make_mock_response({"error": "text must not be blank"}, status_code=400)
+    with patch("tools.httpx.request", return_value=mock):
+        result = analyze_text("")
+
+    assert result["kind"] == "validation"
+
+
+def test_backend_404_returns_not_found_kind():
+    # _call_backend's generic 404 classification. Verified live against the
+    # real backend that /api/chat/{id}/history does NOT actually 404 for an
+    # unknown id -- it returns 200 with an empty list (see the test below).
+    # This test just confirms the classification logic works if some other
+    # endpoint ever does return a 404.
+    mock = make_mock_response({}, status_code=404)
+    with patch("tools.httpx.request", return_value=mock):
+        result = get_chat_history("nonexistent-id")
+
+    assert result["kind"] == "not_found"
+
+
+def test_get_chat_history_unknown_id_returns_empty_list_not_error():
+    # Verified live: the backend returns 200 [] for an unknown conversationId
+    # rather than a 404. "No history yet" and "bad id" are indistinguishable
+    # from this response alone.
+    with patch("tools.httpx.request", return_value=make_mock_response([])):
+        result = get_chat_history("nonexistent-id")
+
+    assert result == []
+
+
+def test_backend_500_returns_server_kind():
+    mock = make_mock_response({}, status_code=500)
+    with patch("tools.httpx.request", return_value=mock):
+        result = analyze_text("some text")
+
+    assert result["kind"] == "server"
