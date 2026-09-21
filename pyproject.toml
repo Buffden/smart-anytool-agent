@@ -20,7 +20,7 @@ dev = ["pytest", "pytest-mock"]
 Repository = "https://github.com/Buffden/smart-anytool-agent"
 
 [tool.setuptools]
-py-modules = ["schemas", "tools", "config", "smart", "retriever", "validation", "agent", "db_validation"]
+py-modules = ["schemas", "tools", "config", "smart", "retriever", "validation", "agent", "db_validation", "planner", "executor", "workflow"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
