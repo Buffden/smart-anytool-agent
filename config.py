@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     backend_base_url: str = "http://localhost:8080"
     backend_http_timeout: int = 10
 
+    # Database tools
+    agent_db_dsn: str = "postgresql://agent_readonly:change_me@localhost:5433/ops_db"
+    db_statement_timeout_ms: int = 5000
+
     # Agent loop
     agent_max_iterations: int = 5
 

@@ -1,8 +1,13 @@
 import httpx
 import ast
+import datetime
+import decimal
 from duckduckgo_search import DDGS
+import psycopg
+from psycopg.rows import dict_row
 
 from config import settings
+from db_validation import validate_select
 
 
 def get_weather(location: str, unit: str = settings.weather_default_unit) -> dict:
@@ -127,3 +132,42 @@ def get_chat_history(conversation_id: str) -> list | dict:
 
 def list_conversations() -> list | dict:
     return _call_backend("GET", "/api/chat/conversations")
+
+
+def _json_safe(value):
+    if isinstance(value, decimal.Decimal):
+        return float(value)
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    return value
+
+
+def query_database(sql: str) -> dict:
+    try:
+        safe_sql = validate_select(sql)
+    except ValueError as e:
+        return {"error": str(e), "kind": "blocked"}
+
+    try:
+        with psycopg.connect(
+            settings.agent_db_dsn,
+            autocommit=True,
+            options=f"-c statement_timeout={settings.db_statement_timeout_ms}",
+        ) as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(safe_sql)
+                rows = cur.fetchall()
+    except psycopg.errors.InsufficientPrivilege:
+        return {"error": "This query was rejected by the database's read-only role.", "kind": "permission"}
+    except psycopg.errors.QueryCanceled:
+        return {"error": "The query took too long and was cancelled.", "kind": "timeout"}
+    except psycopg.OperationalError as e:
+        return {"error": f"Could not reach the database: {e}", "kind": "transport"}
+    except psycopg.Error as e:
+        return {"error": str(e), "kind": "syntax"}
+
+    rows = [{k: _json_safe(v) for k, v in row.items()} for row in rows]
+
+    if not rows:
+        return {"rows": [], "kind": "empty"}
+    return {"rows": rows, "kind": "ok"}

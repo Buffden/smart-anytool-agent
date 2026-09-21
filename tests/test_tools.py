@@ -1,4 +1,8 @@
+import datetime
+import decimal
+
 import httpx
+import psycopg
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -8,6 +12,7 @@ from tools import (
     get_chat_history,
     get_weather,
     list_conversations,
+    query_database,
     send_chat_message,
     web_search,
 )
@@ -281,3 +286,84 @@ def test_backend_500_returns_server_kind():
         result = analyze_text("some text")
 
     assert result["kind"] == "server"
+
+
+# query_database
+
+def make_mock_db_connection(rows: list[dict]):
+    cursor = MagicMock()
+    cursor.__enter__ = MagicMock(return_value=cursor)
+    cursor.__exit__ = MagicMock(return_value=False)
+    cursor.fetchall.return_value = rows
+
+    conn = MagicMock()
+    conn.__enter__ = MagicMock(return_value=conn)
+    conn.__exit__ = MagicMock(return_value=False)
+    conn.cursor.return_value = cursor
+
+    return conn
+
+
+def test_query_database_blocked_by_validator_never_calls_db():
+    with patch("tools.psycopg.connect") as mock_connect:
+        result = query_database("DELETE FROM employees WHERE id = 1")
+
+    assert result["kind"] == "blocked"
+    mock_connect.assert_not_called()
+
+
+def test_query_database_returns_rows_on_success():
+    conn = make_mock_db_connection([{"name": "Engineering"}])
+    with patch("tools.psycopg.connect", return_value=conn):
+        result = query_database("SELECT name FROM departments")
+
+    assert result["kind"] == "ok"
+    assert result["rows"] == [{"name": "Engineering"}]
+
+
+def test_query_database_empty_result_has_empty_kind():
+    conn = make_mock_db_connection([])
+    with patch("tools.psycopg.connect", return_value=conn):
+        result = query_database("SELECT name FROM departments WHERE name = 'Nobody'")
+
+    assert result == {"rows": [], "kind": "empty"}
+
+
+def test_query_database_serializes_decimal_and_date():
+    conn = make_mock_db_connection([
+        {"salary": decimal.Decimal("165000.00"), "hire_date": datetime.date(2021, 3, 1)}
+    ])
+    with patch("tools.psycopg.connect", return_value=conn):
+        result = query_database("SELECT salary, hire_date FROM employees")
+
+    assert result["rows"][0]["salary"] == 165000.0
+    assert isinstance(result["rows"][0]["salary"], float)
+    assert result["rows"][0]["hire_date"] == "2021-03-01"
+
+
+def test_query_database_permission_denied_returns_permission_kind():
+    with patch("tools.psycopg.connect", side_effect=psycopg.errors.InsufficientPrivilege("denied")):
+        result = query_database("SELECT * FROM employees")
+
+    assert result["kind"] == "permission"
+
+
+def test_query_database_timeout_returns_timeout_kind():
+    with patch("tools.psycopg.connect", side_effect=psycopg.errors.QueryCanceled("cancelled")):
+        result = query_database("SELECT * FROM employees")
+
+    assert result["kind"] == "timeout"
+
+
+def test_query_database_connection_refused_returns_transport_kind():
+    with patch("tools.psycopg.connect", side_effect=psycopg.OperationalError("refused")):
+        result = query_database("SELECT * FROM employees")
+
+    assert result["kind"] == "transport"
+
+
+def test_query_database_undefined_column_returns_syntax_kind():
+    with patch("tools.psycopg.connect", side_effect=psycopg.errors.UndefinedColumn("no such column")):
+        result = query_database("SELECT favorite_color FROM employees")
+
+    assert result["kind"] == "syntax"

@@ -9,6 +9,7 @@ CATEGORIES
 computation : arithmetic, percentages, exponents, or any mathematical calculation
 data_lookup : current weather, forecasts, live news, recent events, or web searches
 text_intelligence : summarizing text, sentiment/key topics, classifying text into a category, or sending/continuing a chat conversation with the backend's own assistant
+database : questions about company departments or employees -- headcount, salary, budget, manager relationships, hire dates -- answered by querying the operations database
 
 ---
 
@@ -25,7 +26,7 @@ OUTPUT FORMAT
 Respond with JSON only. No text before or after the JSON.
 
 {
-  "category": "computation" | "data_lookup" | "text_intelligence" | "unknown",
+  "category": "computation" | "data_lookup" | "text_intelligence" | "database" | "unknown",
   "reason": "one concise sentence explaining your decision"
 }
 
@@ -53,3 +54,6 @@ Question: Tell the chat assistant I'm debugging a Spring Boot app.
 
 Question: What category is this text in: The championship game went into overtime.
 {"category": "text_intelligence", "reason": "The user wants the backend's classifier to assign a category label to a piece of text -- 'category' here refers to the label being requested, not the routing category of this question itself."}
+
+Question: Which department has the highest budget, and who manages it?
+{"category": "database", "reason": "Requires querying the operations database for department budgets and manager relationships."}

@@ -51,6 +51,16 @@ def test_missing_required_arg_send_chat_message():
 def test_missing_required_arg_get_chat_history():
     assert "error" in dispatch("get_chat_history", '{}')
 
+def test_missing_required_arg_query_database():
+    assert "error" in dispatch("query_database", '{}')
+
+def test_query_database_rejects_empty_string():
+    assert "error" in dispatch("query_database", json.dumps({"sql": ""}))
+
+def test_query_database_rejects_overlong_sql():
+    result = dispatch("query_database", json.dumps({"sql": "SELECT " + "x" * 2000}))
+    assert "error" in result
+
 def test_analyze_text_rejects_empty_string():
     assert "error" in dispatch("analyze_text", json.dumps({"text": ""}))
 
@@ -120,6 +130,12 @@ def test_valid_list_conversations_call():
         result = dispatch("list_conversations", '{}')
     mock.assert_called_once_with()
     assert result == []
+
+def test_valid_query_database_call():
+    with patch("tools.query_database", return_value={"rows": [], "kind": "ok"}) as mock:
+        result = dispatch("query_database", json.dumps({"sql": "SELECT 1"}))
+    mock.assert_called_once_with(sql="SELECT 1")
+    assert result["kind"] == "ok"
 
 
 # error and success results have the same shape

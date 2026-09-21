@@ -6,6 +6,7 @@ from schemas import (
     CLASSIFY_TEXT_SCHEMA,
     GET_CHAT_HISTORY_SCHEMA,
     LIST_CONVERSATIONS_SCHEMA,
+    QUERY_DATABASE_SCHEMA,
     SEND_CHAT_MESSAGE_SCHEMA,
     TOOL_CATEGORIES,
     WEATHER_SCHEMA,
@@ -128,6 +129,25 @@ def test_list_conversations_takes_no_arguments():
 def test_get_chat_history_required_fields():
     assert get_required(GET_CHAT_HISTORY_SCHEMA) == ["conversation_id"]
 
+# Database schema
+
+def test_query_database_schema_structure():
+    assert QUERY_DATABASE_SCHEMA["type"] == "function"
+    fn = QUERY_DATABASE_SCHEMA["function"]
+    assert fn["name"] == "query_database"
+    assert "description" in fn and fn["description"]
+    assert get_params(QUERY_DATABASE_SCHEMA)["type"] == "object"
+
+def test_query_database_required_fields():
+    assert get_required(QUERY_DATABASE_SCHEMA) == ["sql"]
+
+def test_query_database_description_covers_schema_and_restriction():
+    desc = QUERY_DATABASE_SCHEMA["function"]["description"].lower()
+    assert "select" in desc
+    assert "do not" in desc
+    assert "departments" in desc
+    assert "employees" in desc
+
 # TOOL_CATEGORIES
 
 def test_tool_categories_has_data_lookup():
@@ -155,6 +175,13 @@ def test_text_intelligence_contains_all_five():
         "list_conversations", "get_chat_history",
     }
 
+def test_tool_categories_has_database():
+    assert "database" in TOOL_CATEGORIES
+
+def test_database_contains_query_database():
+    names = [s["function"]["name"] for s in TOOL_CATEGORIES["database"]]
+    assert "query_database" in names
+
 # ALL_TOOLS flat list
 
 def test_all_tools_contains_every_registered_tool():
@@ -162,7 +189,7 @@ def test_all_tools_contains_every_registered_tool():
     assert names == {
         "get_weather", "calculator", "web_search",
         "analyze_text", "classify_text", "send_chat_message",
-        "list_conversations", "get_chat_history",
+        "list_conversations", "get_chat_history", "query_database",
     }
 
 def test_all_tools_no_duplicates():

@@ -44,6 +44,11 @@ pip3 install -e .
 
 cp .env.example .env
 # Add your OPENAI_API_KEY to .env
+
+# For the database tools:
+docker compose up -d
+# schema, seed data, and the agent_readonly role are created
+# automatically from db/seed.sql on first init
 ```
 
 ---
@@ -76,9 +81,15 @@ Agent: [SMART] Tool required - specialized NLP task.
        [AnyTool] Selected category: text_intelligence tools.
        [Tool] analyze_text(text="I loved this movie, best I've seen all year.")
        Sentiment: positive. Key topics: movie review, praise.
+
+You: Which department has the highest budget?
+Agent: [SMART] Tool required - requires real company data.
+       [AnyTool] Selected category: database tools.
+       [Tool] query_database(sql="SELECT name, budget FROM departments ORDER BY budget DESC LIMIT 1")
+       Engineering, with a budget of $2,500,000.
 ```
 
-The `text_intelligence` category requires the `ai-text-intelligence-dashboard` Spring Boot backend running on `http://localhost:8080` - see `config.py`'s `backend_base_url`.
+The `text_intelligence` category requires the `ai-text-intelligence-dashboard` Spring Boot backend running on `http://localhost:8080` - see `config.py`'s `backend_base_url`. The `database` category requires Postgres running (`docker compose up -d`) with the `agent_readonly` role created - see `db/seed.sql` and `config.py`'s `agent_db_dsn`.
 
 ---
 
@@ -97,6 +108,7 @@ The `text_intelligence` category requires the `ai-text-intelligence-dashboard` S
 | Pydantic argument validation + dispatch | Engineering best practice | [x] |
 | CLI entry point | Project infrastructure | [x] |
 | Backend-connected tools (`text_intelligence`) | Project infrastructure | [x] |
+| Database-aware tools (`database`), read-only enforced two ways | Project infrastructure | [x] |
 
 ---
 
@@ -109,6 +121,9 @@ The `text_intelligence` category requires the `ai-text-intelligence-dashboard` S
 - duckduckgo-search - web search, no API key required
 - Open-Meteo API - weather, no API key required
 - ai-text-intelligence-dashboard - Spring Boot backend for text_intelligence tools (analyze, classify, chat)
+- PostgreSQL 16 (via Docker Compose) - operations database for the database tools
+- `psycopg` - Postgres driver
+- `sqlglot` - parses and validates model-generated SQL before it executes
 
 ---
 
