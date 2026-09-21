@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from executor import _resolve_args, _resolve_value, execute_plan, synthesize
+from executor import SynthesisError, _resolve_args, _resolve_value, execute_plan, synthesize
 from planner import Plan
 
 
@@ -77,6 +77,35 @@ def test_execute_plan_stops_on_failure_by_default():
     assert mock_dispatch.call_count == 1
 
 
+def test_execute_plan_detects_failure_wrapped_in_a_list():
+    # web_search's failure shape is [{"error": ...}], not a dict like every
+    # other tool -- stop_on_failure must still catch it.
+    plan = Plan(steps=[
+        {"tool": "web_search", "args": {"query": "x"}, "purpose": "fails"},
+        {"tool": "calculator", "args": {"expression": "1+1"}, "purpose": "never runs"},
+    ])
+    with patch("executor.dispatch", side_effect=[[{"error": "Search failed: boom"}]]) as mock_dispatch:
+        results = execute_plan(plan)
+
+    assert len(results) == 1
+    assert mock_dispatch.call_count == 1
+
+
+def test_execute_plan_does_not_treat_a_successful_list_result_as_a_failure():
+    plan = Plan(steps=[
+        {"tool": "web_search", "args": {"query": "x"}, "purpose": "succeeds"},
+        {"tool": "calculator", "args": {"expression": "1+1"}, "purpose": "runs next"},
+    ])
+    with patch(
+        "executor.dispatch",
+        side_effect=[[{"title": "r", "url": "u", "snippet": "s"}], {"result": 2}],
+    ) as mock_dispatch:
+        results = execute_plan(plan)
+
+    assert len(results) == 2
+    assert mock_dispatch.call_count == 2
+
+
 def test_execute_plan_continues_past_failure_when_told_to():
     plan = Plan(steps=[
         {"tool": "calculator", "args": {"expression": "bad"}, "purpose": "fails"},
@@ -124,3 +153,22 @@ def test_synthesize_returns_report_and_email():
         result = synthesize("some request", [{"purpose": "p", "tool": "t", "result": {"rows": []}}])
 
     assert result == payload
+
+
+def test_synthesize_wraps_api_failure():
+    with patch("executor.client.chat.completions.create", side_effect=Exception("rate limited")):
+        with pytest.raises(SynthesisError):
+            synthesize("some request", [])
+
+
+def test_synthesize_wraps_invalid_json():
+    message = MagicMock()
+    message.content = "not valid json at all"
+    choice = MagicMock()
+    choice.message = message
+    response = MagicMock()
+    response.choices = [choice]
+
+    with patch("executor.client.chat.completions.create", return_value=response):
+        with pytest.raises(SynthesisError):
+            synthesize("some request", [])

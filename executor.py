@@ -9,6 +9,11 @@ from validation import dispatch
 
 client = OpenAI(api_key=settings.openai_api_key)
 
+
+class SynthesisError(Exception):
+    pass
+
+
 # Not anchored to the whole string: a placeholder is usually embedded inside
 # a larger value (e.g. a SQL fragment), not the entire argument by itself.
 _REF_PATTERN = re.compile(r"\{\{step_(\d+)\.([^{}]+)\}\}")
@@ -58,6 +63,17 @@ def _resolve_args(args: dict, results: list[dict]) -> dict:
     return {key: _resolve_value(value, results) for key, value in args.items()}
 
 
+def _is_failure(result) -> bool:
+    # Most tools return {"error": ..., "kind": ...} on failure, but web_search
+    # returns its failure wrapped in a list -- [{"error": ...}] -- since its
+    # success shape is a list too. Check both shapes rather than assuming dict.
+    if isinstance(result, dict):
+        return "error" in result
+    if isinstance(result, list):
+        return any(isinstance(item, dict) and "error" in item for item in result)
+    return False
+
+
 def execute_plan(plan: Plan, stop_on_failure: bool = True) -> list[dict]:
     results = []
 
@@ -74,7 +90,7 @@ def execute_plan(plan: Plan, stop_on_failure: bool = True) -> list[dict]:
         result = dispatch(step.tool, json.dumps(resolved_args))
         results.append({"purpose": step.purpose, "tool": step.tool, "result": result})
 
-        if isinstance(result, dict) and "error" in result and stop_on_failure:
+        if _is_failure(result) and stop_on_failure:
             break
 
     return results
@@ -93,16 +109,23 @@ _SYNTHESIS_PROMPT = (
 
 
 def synthesize(request: str, results: list[dict]) -> dict:
-    chat = client.chat.completions.create(
-        model=settings.openai_model,
-        temperature=settings.openai_temperature,
-        messages=[
-            {"role": "system", "content": _SYNTHESIS_PROMPT},
-            {
-                "role": "user",
-                "content": json.dumps({"request": request, "step_results": results}),
-            },
-        ],
-        response_format={"type": "json_object"},
-    )
-    return json.loads(chat.choices[0].message.content)
+    try:
+        chat = client.chat.completions.create(
+            model=settings.openai_model,
+            temperature=settings.openai_temperature,
+            messages=[
+                {"role": "system", "content": _SYNTHESIS_PROMPT},
+                {
+                    "role": "user",
+                    "content": json.dumps({"request": request, "step_results": results}),
+                },
+            ],
+            response_format={"type": "json_object"},
+        )
+    except Exception as e:
+        raise SynthesisError(f"Could not reach the synthesis model: {e}")
+
+    try:
+        return json.loads(chat.choices[0].message.content)
+    except json.JSONDecodeError as e:
+        raise SynthesisError(f"Synthesis produced invalid JSON: {e}")
