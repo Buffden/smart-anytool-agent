@@ -42,20 +42,23 @@ def _registered_tool_names() -> set[str]:
 def generate_plan(request: str) -> Plan:
     system_prompt = _PROMPT_TEMPLATE.replace("<<TOOL_LISTING>>", _tool_listing())
 
-    chat = client.chat.completions.create(
-        model=settings.openai_model,
-        temperature=settings.openai_temperature,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": request},
-        ],
-        response_format={"type": "json_object"},
-    )
+    try:
+        chat = client.chat.completions.create(
+            model=settings.openai_model,
+            temperature=settings.openai_temperature,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request},
+            ],
+            response_format={"type": "json_object"},
+        )
+    except Exception as e:
+        raise PlanError(f"Could not reach the planning model: {e}")
 
     try:
         raw = json.loads(chat.choices[0].message.content)
         plan = Plan(**raw)
-    except (json.JSONDecodeError, ValidationError) as e:
+    except (json.JSONDecodeError, ValidationError, TypeError) as e:
         raise PlanError(f"Planner produced an invalid plan: {e}")
 
     known = _registered_tool_names()

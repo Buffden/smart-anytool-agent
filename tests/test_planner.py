@@ -55,6 +55,18 @@ def test_generate_plan_rejects_empty_steps():
             generate_plan("some request")
 
 
+def test_generate_plan_wraps_api_failure_in_plan_error():
+    with patch("planner.client.chat.completions.create", side_effect=Exception("network error")):
+        with pytest.raises(PlanError):
+            generate_plan("some request")
+
+
+def test_generate_plan_rejects_non_dict_json():
+    with patch("planner.client.chat.completions.create", return_value=make_openai_response(["not", "a", "dict"])):
+        with pytest.raises(PlanError):
+            generate_plan("some request")
+
+
 def test_generate_plan_rejects_unknown_tool():
     payload = {"steps": [{"tool": "delete_everything", "args": {}, "purpose": "nope"}]}
     with patch("planner.client.chat.completions.create", return_value=make_openai_response(payload)):
