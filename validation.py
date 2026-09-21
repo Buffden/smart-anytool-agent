@@ -41,6 +41,10 @@ class GetChatHistoryArgs(BaseModel):
     conversation_id: str
 
 
+class QueryDatabaseArgs(BaseModel):
+    sql: str = Field(..., min_length=1, max_length=2000)
+
+
 _REGISTRY: dict[str, tuple] = {
     "get_weather": (GetWeatherArgs, "get_weather"),
     "web_search":  (WebSearchArgs,  "web_search"),
@@ -50,6 +54,7 @@ _REGISTRY: dict[str, tuple] = {
     "send_chat_message": (SendChatMessageArgs, "send_chat_message"),
     "list_conversations": (ListConversationsArgs, "list_conversations"),
     "get_chat_history": (GetChatHistoryArgs, "get_chat_history"),
+    "query_database": (QueryDatabaseArgs, "query_database"),
 }
 
 

@@ -191,6 +191,41 @@ GET_CHAT_HISTORY_SCHEMA = {
     },
 }
 
+DB_SCHEMA_CONTEXT = (
+    "Tables:\n"
+    "  departments(id INTEGER PK, name TEXT, budget NUMERIC)\n"
+    "  employees(id INTEGER PK, name TEXT, department_id INTEGER FK->departments.id, "
+    "title TEXT, salary NUMERIC, manager_id INTEGER FK->employees.id, hire_date DATE)\n"
+    "Rules: only SELECT statements are permitted; self-join employees on manager_id "
+    "for manager lookups; use ILIKE for case-insensitive text matches."
+)
+
+QUERY_DATABASE_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "query_database",
+        "description": (
+            "Use this tool to answer questions about company departments and "
+            "employees (headcount, salary, budget, manager relationships, hire "
+            "dates) by writing a read-only SQL SELECT statement against the "
+            "operations database. " + DB_SCHEMA_CONTEXT + " "
+            "Do NOT attempt UPDATE, DELETE, INSERT, DROP, or any other write -- "
+            "this tool only supports SELECT and any other statement type will "
+            "be rejected before it reaches the database."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "sql": {
+                    "type": "string",
+                    "description": "A single read-only SQL SELECT statement, valid Postgres syntax.",
+                },
+            },
+            "required": ["sql"],
+        },
+    },
+}
+
 TOOL_CATEGORIES: dict[str, list[dict]] = {
     "data_lookup": [WEATHER_SCHEMA, WEB_SEARCH_SCHEMA],
     "computation": [CALCULATOR_SCHEMA],
@@ -201,6 +236,7 @@ TOOL_CATEGORIES: dict[str, list[dict]] = {
         LIST_CONVERSATIONS_SCHEMA,
         GET_CHAT_HISTORY_SCHEMA,
     ],
+    "database": [QUERY_DATABASE_SCHEMA],
 }
 
 ALL_TOOLS: list[dict] = [
