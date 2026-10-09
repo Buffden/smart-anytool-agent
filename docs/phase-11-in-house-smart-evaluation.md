@@ -33,6 +33,7 @@ Raw results: `evals/results/smart_eval_20261009_161745.json`
 - Accuracy was 100% for both, so no loss, but the questions are too easy to show a gain.
 - No drop in unnecessary tool calls: `gpt-4o-mini` already avoids them on easy questions.
 - Not comparable to the paper (different models, questions, and metrics). See Phase 12.
+- Web search was broken during this run (the old `duckduckgo-search` package returned no results; fixed in Phase 12). The live data row was measured against empty search results. Gate accuracy and the knowledge row are unaffected, since neither used web search.
 
 ---
 
