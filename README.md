@@ -110,6 +110,7 @@ The `text_intelligence` category requires the `ai-text-intelligence-dashboard` S
 | Backend-connected tools (`text_intelligence`) | Project infrastructure | [x] |
 | Database-aware tools (`database`), read-only enforced two ways | Project infrastructure | [x] |
 | In-house A/B eval of the SMART gate ([Phase 11](docs/phase-11-in-house-smart-evaluation.md)) | SMART (ACL 2025) | [x] |
+| Replication on the SMART paper's benchmarks ([Phase 12](docs/phase-12-smart-benchmark-replication.md)) | SMART (ACL 2025) | [ ] |
 
 ---
 
@@ -119,7 +120,7 @@ The `text_intelligence` category requires the `ai-text-intelligence-dashboard` S
 - OpenAI API (`gpt-4o-mini`)
 - Pydantic - argument validation
 - httpx - async HTTP for weather API and the text_intelligence backend
-- duckduckgo-search - web search, no API key required
+- ddgs - DuckDuckGo web search, no API key required
 - Open-Meteo API - weather, no API key required
 - ai-text-intelligence-dashboard - Spring Boot backend for text_intelligence tools (analyze, classify, chat)
 - PostgreSQL 16 (via Docker Compose) - operations database for the database tools

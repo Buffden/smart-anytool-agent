@@ -12,72 +12,14 @@ Usage (from the project root):
 import argparse
 import json
 import re
-import sys
-import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-
-from openai.resources.chat.completions import Completions  # noqa: E402
-
-import agent  # noqa: E402
-import retriever  # noqa: E402
-from smart import self_awareness_check  # noqa: E402
+from harness import PIPELINES, ROOT, change, measure
 
 DATASET = Path(__file__).parent / "smart_dataset.jsonl"
 RESULTS_DIR = Path(__file__).parent / "results"
-
-
-class Counters:
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.llm_calls = 0
-        self.prompt_tokens = 0
-        self.completion_tokens = 0
-        self.tool_calls = []
-
-
-counters = Counters()
-
-_original_create = Completions.create
-_original_dispatch = agent.dispatch
-
-
-def _counting_create(self, *args, **kwargs):
-    response = _original_create(self, *args, **kwargs)
-    counters.llm_calls += 1
-    if response.usage:
-        counters.prompt_tokens += response.usage.prompt_tokens
-        counters.completion_tokens += response.usage.completion_tokens
-    return response
-
-
-def _counting_dispatch(name, raw_args):
-    counters.tool_calls.append(name)
-    return _original_dispatch(name, raw_args)
-
-
-Completions.create = _counting_create
-agent.dispatch = _counting_dispatch
-
-
-def run_baseline(question: str) -> tuple[str, bool | None]:
-    return retriever.run(question), None
-
-
-def run_smart(question: str) -> tuple[str, bool | None]:
-    gate = self_awareness_check(question)
-    if not gate["needs_tool"]:
-        return gate["answer"] or "", False
-    return retriever.run(question), True
-
-
-PIPELINES = {"baseline": run_baseline, "smart": run_smart}
 
 
 def normalize(text: str) -> str:
@@ -95,33 +37,17 @@ def is_correct(answer: str, gold: list[str] | None) -> bool | None:
 def evaluate(items: list[dict], pipeline: str) -> list[dict]:
     rows = []
     for item in items:
-        counters.reset()
-        start = time.perf_counter()
-        try:
-            answer, gate_needs_tool = PIPELINES[pipeline](item["question"])
-            error = None
-        except Exception as exc:
-            answer, gate_needs_tool, error = "", None, repr(exc)
-        latency = time.perf_counter() - start
-
+        result = measure(pipeline, item["question"])
         rows.append({
             "id": item["id"],
             "kind": item["kind"],
             "needs_tool": item["needs_tool"],
-            "pipeline": pipeline,
-            "answer": answer,
-            "correct": is_correct(answer, item["gold"]),
-            "gate_needs_tool": gate_needs_tool,
-            "tool_calls": list(counters.tool_calls),
-            "n_tool_calls": len(counters.tool_calls),
-            "llm_calls": counters.llm_calls,
-            "tokens": counters.prompt_tokens + counters.completion_tokens,
-            "latency_s": round(latency, 3),
-            "error": error,
+            **result,
+            "correct": is_correct(result["answer"], item["gold"]),
         })
         mark = {True: "ok", False: "WRONG", None: "-"}[rows[-1]["correct"]]
-        print(f"  [{pipeline}] {item['id']} tools={rows[-1]['n_tool_calls']} "
-              f"llm={counters.llm_calls} {latency:.1f}s {mark}")
+        print(f"  [{pipeline}] {item['id']} tools={result['n_tool_calls']} "
+              f"llm={result['llm_calls']} {result['latency_s']:.1f}s {mark}")
     return rows
 
 
@@ -163,12 +89,6 @@ def gate_metrics(rows: list[dict]) -> dict:
         "true_tool": tp, "true_direct": tn,
         "false_tool (overuse)": fp, "false_direct (missed tool)": fn,
     }
-
-
-def change(before, after):
-    if not before:
-        return "n/a"
-    return f"{100 * (after - before) / before:+.1f}%"
 
 
 def main():
