@@ -1,0 +1,45 @@
+{"id": "k01", "kind": "knowledge", "needs_tool": false, "question": "What is the capital of Australia?", "gold": ["canberra"]}
+{"id": "k02", "kind": "knowledge", "needs_tool": false, "question": "Who wrote the novel Pride and Prejudice?", "gold": ["austen"]}
+{"id": "k03", "kind": "knowledge", "needs_tool": false, "question": "What is the chemical symbol for gold?", "gold": ["au"]}
+{"id": "k04", "kind": "knowledge", "needs_tool": false, "question": "In what year did World War II end?", "gold": ["1945"]}
+{"id": "k05", "kind": "knowledge", "needs_tool": false, "question": "What planet is known as the Red Planet?", "gold": ["mars"]}
+{"id": "k06", "kind": "knowledge", "needs_tool": false, "question": "What is the boiling point of water at sea level in Celsius?", "gold": ["100"]}
+{"id": "k07", "kind": "knowledge", "needs_tool": false, "question": "Who painted the Mona Lisa?", "gold": ["da vinci", "leonardo"]}
+{"id": "k08", "kind": "knowledge", "needs_tool": false, "question": "What is the largest ocean on Earth?", "gold": ["pacific"]}
+{"id": "k09", "kind": "knowledge", "needs_tool": false, "question": "How many continents are there?", "gold": ["7", "seven"]}
+{"id": "k10", "kind": "knowledge", "needs_tool": false, "question": "What gas do plants absorb from the atmosphere for photosynthesis?", "gold": ["carbon dioxide", "co2", "co₂"]}
+{"id": "k11", "kind": "knowledge", "needs_tool": false, "question": "What does HTTP stand for?", "gold": ["hypertext transfer protocol"]}
+{"id": "k12", "kind": "knowledge", "needs_tool": false, "question": "Translate 'thank you' into Spanish.", "gold": ["gracias"]}
+{"id": "k13", "kind": "knowledge", "needs_tool": false, "question": "Who developed the theory of general relativity?", "gold": ["einstein"]}
+{"id": "k14", "kind": "knowledge", "needs_tool": false, "question": "What is the capital of Canada?", "gold": ["ottawa"]}
+{"id": "k15", "kind": "knowledge", "needs_tool": false, "question": "What is the hardest natural substance?", "gold": ["diamond"]}
+{"id": "k16", "kind": "knowledge", "needs_tool": false, "question": "What is the time complexity of binary search?", "gold": ["log n", "logn", "log(n)", "log n"]}
+{"id": "k17", "kind": "knowledge", "needs_tool": false, "question": "What programming language is primarily used for styling web pages?", "gold": ["css"]}
+{"id": "k18", "kind": "knowledge", "needs_tool": false, "question": "Which organ in the human body pumps blood?", "gold": ["heart"]}
+{"id": "k19", "kind": "knowledge", "needs_tool": false, "question": "What is the square root of 144?", "gold": ["12"]}
+{"id": "k20", "kind": "knowledge", "needs_tool": false, "question": "Who was the first person to walk on the Moon?", "gold": ["armstrong"]}
+{"id": "k21", "kind": "knowledge", "needs_tool": false, "question": "What is the longest river in Africa?", "gold": ["nile"]}
+{"id": "k22", "kind": "knowledge", "needs_tool": false, "question": "What does the acronym SQL stand for?", "gold": ["structured query language"]}
+{"id": "k23", "kind": "knowledge", "needs_tool": false, "question": "What is the freezing point of water in Fahrenheit?", "gold": ["32"]}
+{"id": "k24", "kind": "knowledge", "needs_tool": false, "question": "What is the smallest prime number?", "gold": ["2", "two"]}
+{"id": "k25", "kind": "knowledge", "needs_tool": false, "question": "Explain in one sentence what a REST API is.", "gold": ["http", "resource"]}
+{"id": "c01", "kind": "computation", "needs_tool": true, "question": "What is 15% of 340?", "gold": ["51"]}
+{"id": "c02", "kind": "computation", "needs_tool": true, "question": "What is 4837 multiplied by 2916?", "gold": ["14104692", "14,104,692"]}
+{"id": "c03", "kind": "computation", "needs_tool": true, "question": "What is 2 to the power of 23?", "gold": ["8388608", "8,388,608"]}
+{"id": "c04", "kind": "computation", "needs_tool": true, "question": "What is 98765 divided by 125?", "gold": ["790.12"]}
+{"id": "c05", "kind": "computation", "needs_tool": true, "question": "Compute (1234 + 5678) * 37.", "gold": ["255744", "255,744"]}
+{"id": "c06", "kind": "computation", "needs_tool": true, "question": "What is 17.5% of 8,640?", "gold": ["1512", "1,512"]}
+{"id": "c07", "kind": "computation", "needs_tool": true, "question": "What is 7391 minus 2847 plus 1203?", "gold": ["5747", "5,747"]}
+{"id": "c08", "kind": "computation", "needs_tool": true, "question": "What is 389 squared?", "gold": ["151321", "151,321"]}
+{"id": "c09", "kind": "computation", "needs_tool": true, "question": "If I invest $2,500 and it grows by 12%, how much do I have?", "gold": ["2800", "2,800"]}
+{"id": "c10", "kind": "computation", "needs_tool": true, "question": "What is 123456 modulo 789?", "gold": ["372"]}
+{"id": "l01", "kind": "live", "needs_tool": true, "question": "What is the weather in Tokyo right now?", "gold": null}
+{"id": "l02", "kind": "live", "needs_tool": true, "question": "What's the current temperature in London?", "gold": null}
+{"id": "l03", "kind": "live", "needs_tool": true, "question": "Is it raining in Seattle right now?", "gold": null}
+{"id": "l04", "kind": "live", "needs_tool": true, "question": "How humid is it in Mumbai today?", "gold": null}
+{"id": "l05", "kind": "live", "needs_tool": true, "question": "What is the current weather in Dallas?", "gold": null}
+{"id": "l06", "kind": "live", "needs_tool": true, "question": "What are the latest news headlines about AI agents this week?", "gold": null}
+{"id": "l07", "kind": "live", "needs_tool": true, "question": "What is the latest stable release of Python right now?", "gold": null}
+{"id": "l08", "kind": "live", "needs_tool": true, "question": "Search the web for recent research papers on tool-calling LLM agents.", "gold": null}
+{"id": "l09", "kind": "live", "needs_tool": true, "question": "What happened in the stock market today?", "gold": null}
+{"id": "l10", "kind": "live", "needs_tool": true, "question": "What's the wind speed in Chicago right now?", "gold": null}
