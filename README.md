@@ -109,6 +109,7 @@ The `text_intelligence` category requires the `ai-text-intelligence-dashboard` S
 | CLI entry point | Project infrastructure | [x] |
 | Backend-connected tools (`text_intelligence`) | Project infrastructure | [x] |
 | Database-aware tools (`database`), read-only enforced two ways | Project infrastructure | [x] |
+| In-house A/B eval of the SMART gate ([Phase 11](docs/phase-11-in-house-smart-evaluation.md)) | SMART (ACL 2025) | [x] |
 
 ---
 
