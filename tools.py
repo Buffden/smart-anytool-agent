@@ -2,7 +2,7 @@ import httpx
 import ast
 import datetime
 import decimal
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 import psycopg
 from psycopg.rows import dict_row
 
