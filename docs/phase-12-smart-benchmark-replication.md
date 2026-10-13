@@ -100,15 +100,17 @@ This gives two numbers: how often our judge agrees with a human, and how much of
 
 ## Results
 
-Not run yet. Fill in from the summary file after the full run:
+Full run, 3 runs per question, from `evals/results/benchmark_20261010_130840_summary.json`:
 
 | Benchmark | Row | Tool calls per question | Accuracy |
 | --- | --- | --- | --- |
 | FreshQA | Paper, GPT-4o-mini tool prompt | 1.06 | 56.00% |
-| FreshQA | Our baseline | | |
-| FreshQA | Our smart | | |
-| GSM8K | Our baseline | | |
-| GSM8K | Our smart | | |
+| FreshQA | Our baseline | 3.29 | 44.1% |
+| FreshQA | Our smart | 3.13 | 43.9% |
+| GSM8K | Our baseline | 2.41 | 84.3% |
+| GSM8K | Our smart | 2.37 | 83.1% |
+
+The gate answered directly on 2.7% of GSM8K questions and 3.0% of FreshQA questions, so it saved almost no tool calls (-1.7% on GSM8K, -4.9% on FreshQA) while costing more tokens (+31.6%, +8.4%) and latency (+16.9%, +16.7%). FreshQA had 10 rows hit OpenAI connection errors (questions 0035 to 0037); 9 of them got no answer and are left out of the accuracy (5 baseline, 4 smart). FreshQA accuracy is before the spot-check, so some of the gap to the paper may be answer drift.
 
 ---
 
