@@ -36,3 +36,5 @@ Thumbs.db
 # Eval runs (keep only the run cited in docs)
 evals/results/*
 !evals/results/smart_eval_20261009_161745.json
+!evals/results/benchmark_20261010_130840_summary.json
+!evals/results/benchmark_20261010_130840_spotcheck.csv

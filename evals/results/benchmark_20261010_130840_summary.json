@@ -1,0 +1,74 @@
+{
+  "gsm8k": {
+    "baseline": {
+      "questions": 3957,
+      "tool_calls_per_question": 2.41,
+      "accuracy_pct": 84.3,
+      "ungraded": 0,
+      "llm_calls": 15210,
+      "tokens": 6666696,
+      "mean_latency_s": 3.96,
+      "errors": 0
+    },
+    "smart": {
+      "questions": 3957,
+      "tool_calls_per_question": 2.37,
+      "accuracy_pct": 83.1,
+      "ungraded": 0,
+      "llm_calls": 18851,
+      "tokens": 8770496,
+      "mean_latency_s": 4.63,
+      "errors": 0,
+      "gate_answered_directly_pct": 2.7,
+      "accuracy_when_answered_directly_pct": 47.6,
+      "accuracy_when_routed_to_tools_pct": 84.1
+    },
+    "delta_smart_vs_baseline": {
+      "tool_calls_per_question": "-1.7%",
+      "tokens": "+31.6%",
+      "mean_latency_s": "+16.9%",
+      "accuracy_pts": -1.2
+    }
+  },
+  "freshqa": {
+    "smart": {
+      "questions": 300,
+      "tool_calls_per_question": 3.13,
+      "accuracy_pct": 43.9,
+      "ungraded": 4,
+      "llm_calls": 1779,
+      "tokens": 1388958,
+      "mean_latency_s": 29.56,
+      "errors": 4,
+      "gate_answered_directly_pct": 3.0,
+      "accuracy_when_answered_directly_pct": 66.7,
+      "accuracy_when_routed_to_tools_pct": 43.2
+    },
+    "baseline": {
+      "questions": 300,
+      "tool_calls_per_question": 3.29,
+      "accuracy_pct": 44.1,
+      "ungraded": 5,
+      "llm_calls": 1535,
+      "tokens": 1281699,
+      "mean_latency_s": 25.33,
+      "errors": 6
+    },
+    "delta_smart_vs_baseline": {
+      "tool_calls_per_question": "-4.9%",
+      "tokens": "+8.4%",
+      "mean_latency_s": "+16.7%",
+      "accuracy_pts": -0.2
+    },
+    "paper_reference": {
+      "paper gpt-4o-mini reasoning prompt": {
+        "tool_calls_per_question": 0.0,
+        "accuracy_pct": 44.0
+      },
+      "paper gpt-4o-mini tool prompt": {
+        "tool_calls_per_question": 1.06,
+        "accuracy_pct": 56.0
+      }
+    }
+  }
+}
