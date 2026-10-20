@@ -45,17 +45,31 @@ class QueryDatabaseArgs(BaseModel):
     sql: str = Field(..., min_length=1, max_length=2000)
 
 
+READ = "read"
+WRITE = "write"
+
+# (validator, function name, risk). Risk is by effect, not HTTP method:
+# analyze_text POSTs but only computes; send_chat_message stores a message.
 _REGISTRY: dict[str, tuple] = {
-    "get_weather": (GetWeatherArgs, "get_weather"),
-    "web_search":  (WebSearchArgs,  "web_search"),
-    "calculator":  (CalculatorArgs, "calculator"),
-    "analyze_text": (AnalyzeTextArgs, "analyze_text"),
-    "classify_text": (ClassifyTextArgs, "classify_text"),
-    "send_chat_message": (SendChatMessageArgs, "send_chat_message"),
-    "list_conversations": (ListConversationsArgs, "list_conversations"),
-    "get_chat_history": (GetChatHistoryArgs, "get_chat_history"),
-    "query_database": (QueryDatabaseArgs, "query_database"),
+    "get_weather": (GetWeatherArgs, "get_weather", READ),
+    "web_search":  (WebSearchArgs,  "web_search", READ),
+    "calculator":  (CalculatorArgs, "calculator", READ),
+    "analyze_text": (AnalyzeTextArgs, "analyze_text", READ),
+    "classify_text": (ClassifyTextArgs, "classify_text", READ),
+    "send_chat_message": (SendChatMessageArgs, "send_chat_message", WRITE),
+    "list_conversations": (ListConversationsArgs, "list_conversations", READ),
+    "get_chat_history": (GetChatHistoryArgs, "get_chat_history", READ),
+    "query_database": (QueryDatabaseArgs, "query_database", READ),
 }
+
+
+def classify(tool_name: str) -> str:
+    # Anything without an explicit "read" is a write, so a tool registered
+    # without a classification gets gated instead of slipping through.
+    entry = _REGISTRY.get(tool_name, ())
+    if len(entry) >= 3 and entry[2] == READ:
+        return READ
+    return WRITE
 
 
 def dispatch(tool_name: str, raw_args: str) -> dict:
@@ -70,7 +84,7 @@ def dispatch(tool_name: str, raw_args: str) -> dict:
     except json.JSONDecodeError as e:
         return {"error": f"Invalid JSON arguments: {e}"}
 
-    validator, fn_name = _REGISTRY[tool_name]
+    validator, fn_name = _REGISTRY[tool_name][:2]
 
     # are the arguments valid?
     try:
