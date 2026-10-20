@@ -17,6 +17,8 @@ Most tool-calling agents dump every available tool at the LLM and hope it picks 
 | [SMART: Self-Aware Agent for Tool Overuse Mitigation](https://arxiv.org/abs/2502.11435) | ACL 2025 Findings | Self-awareness layer that reduces tool calls by 24% while improving accuracy by 37% |
 | [AnyTool: Self-Reflective, Hierarchical Agents for Large-Scale API Calls](https://arxiv.org/abs/2402.04253)<br>[GitHub Repository - AnyTool](https://github.com/dyabel/AnyTool) | ICML 2024 | Hierarchical tool filtering + self-reflection loop; outperforms ToolLLM by 35.4% |
 
+AnyTool's concepts are adapted here at a much smaller scale (a handful of tool categories, not its 16k RapidAPI tools), and are not evaluated on AnyToolBench. SMART is evaluated against the paper's own benchmarks in Phases 12, 15, and 16.
+
 ---
 
 ## Diagrams
@@ -109,8 +111,13 @@ The `text_intelligence` category requires the `ai-text-intelligence-dashboard` S
 | CLI entry point | Project infrastructure | [x] |
 | Backend-connected tools (`text_intelligence`) | Project infrastructure | [x] |
 | Database-aware tools (`database`), read-only enforced two ways | Project infrastructure | [x] |
+| Planned workflow with a separate planner and executor (`run_workflow`) | Engineering best practice | [x] |
 | In-house A/B eval of the SMART gate ([Phase 11](docs/phase-11-in-house-smart-evaluation.md)) | SMART (ACL 2025) | [x] |
 | Replication on the SMART paper's benchmarks ([Phase 12](docs/phase-12-smart-benchmark-replication.md)) | SMART (ACL 2025) | [ ] |
+| Human approval gate and audit log for write tools ([Phase 13](docs/phase-13-approval-gate-and-audit-log.md)) | Engineering best practice | [ ] |
+| MCP server and client, gated like local tools ([Phase 14](docs/phase-14-mcp-server-and-client.md)) | Model Context Protocol | [ ] |
+| SMART prompting baselines on all five paper test sets ([Phase 15](docs/phase-15-smart-prompting-baselines.md)) | SMART (ACL 2025) | [ ] |
+| SMARTAgent models, our own fine-tune, and confidence validation ([Phase 16](docs/phase-16-smartagent-models-and-training.md)) | SMART (ACL 2025) | [ ] |
 
 ---
 
