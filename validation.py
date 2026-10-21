@@ -1,7 +1,9 @@
 import json
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from typing import Literal
 from pydantic import BaseModel, ValidationError, Field
 import tools as _tools
+from approval import ApprovalRequest, Approver, Decision
 from config import settings
 
 # data contracts / validators
@@ -72,7 +74,41 @@ def classify(tool_name: str) -> str:
     return WRITE
 
 
-def dispatch(tool_name: str, raw_args: str) -> dict:
+_DENIED_MESSAGE = (
+    "A human declined this action. The decision is final: do not retry it, "
+    "rephrase it, or use another tool to get the same effect. Tell the user "
+    "it was declined."
+)
+
+
+def _ask_approver(approver: Approver | None, request: ApprovalRequest) -> tuple[str, str | None]:
+    # Every path except an explicit Decision(approved=True) is a denial.
+    if approver is None:
+        return "no_approver", None
+
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
+        decision = pool.submit(approver, request).result(timeout=settings.approval_timeout_s)
+    except FutureTimeout:
+        return "timeout", None
+    except Exception:
+        return "approver_error", None
+    finally:
+        # Don't wait on an approver that never answers.
+        pool.shutdown(wait=False)
+
+    if isinstance(decision, Decision) and decision.approved is True:
+        return "approved", decision.by
+    return "denied", getattr(decision, "by", None)
+
+
+def dispatch(
+    tool_name: str,
+    raw_args: str,
+    approver: Approver | None = None,
+    reason: str = "",
+    failed_steps: list[dict] | None = None,
+) -> dict:
 
     # Is the tool name known?
     if tool_name not in _REGISTRY:
@@ -92,6 +128,20 @@ def dispatch(tool_name: str, raw_args: str) -> dict:
     except ValidationError as e:
         return {"error": f"Argument validation failed: {e}"}
 
+    args = validated.model_dump()
+
+    # approval gate: reads pass, writes need an explicit yes
+    if classify(tool_name) == WRITE:
+        request = ApprovalRequest(
+            tool=tool_name,
+            args=args,
+            reason=reason,
+            failed_steps=failed_steps or [],
+        )
+        decision, _ = _ask_approver(approver, request)
+        if decision != "approved":
+            return {"error": _DENIED_MESSAGE, "kind": "denied", "decision": decision}
+
     # calling the actual function now
     fn = getattr(_tools, fn_name)
-    return fn(**validated.model_dump())
+    return fn(**args)

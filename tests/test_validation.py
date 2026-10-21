@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch
 
+from approval import ScriptedApprover
 from validation import dispatch
 
 
@@ -117,12 +118,16 @@ def test_valid_analyze_text_call():
 
 def test_valid_send_chat_message_call_without_conversation_id():
     with patch("tools.send_chat_message", return_value={"conversationId": "abc-123"}) as mock:
-        dispatch("send_chat_message", json.dumps({"message": "hi"}))
+        dispatch("send_chat_message", json.dumps({"message": "hi"}), approver=ScriptedApprover([True]))
     mock.assert_called_once_with(message="hi", conversation_id=None)
 
 def test_valid_send_chat_message_call_with_conversation_id():
     with patch("tools.send_chat_message", return_value={"conversationId": "abc-123"}) as mock:
-        dispatch("send_chat_message", json.dumps({"message": "hi", "conversation_id": "abc-123"}))
+        dispatch(
+            "send_chat_message",
+            json.dumps({"message": "hi", "conversation_id": "abc-123"}),
+            approver=ScriptedApprover([True]),
+        )
     mock.assert_called_once_with(message="hi", conversation_id="abc-123")
 
 def test_valid_list_conversations_call():

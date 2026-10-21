@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Agent loop
     agent_max_iterations: int = 5
 
+    # Approval gate
+    approval_timeout_s: float = 120.0
+
     # Self-reflection
     retriever_max_retries: int = 3
 
