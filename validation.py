@@ -2,6 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from typing import Literal
 from pydantic import BaseModel, ValidationError, Field
+import audit
 import tools as _tools
 from approval import ApprovalRequest, Approver, Decision
 from config import settings
@@ -108,17 +109,43 @@ def dispatch(
     approver: Approver | None = None,
     reason: str = "",
     failed_steps: list[dict] | None = None,
+    run_id: str | None = None,
 ) -> dict:
+    risk = classify(tool_name)
+    args = raw_args
+    decision, decided_by = "not_needed", None
+    result = None
+
+    try:
+        result, args, decision, decided_by = _gated_call(
+            tool_name, raw_args, approver, reason, failed_steps
+        )
+        return result
+    finally:
+        # Lives here, not in the callers, so no path through dispatch skips it.
+        audit.record(
+            run_id=run_id,
+            tool=tool_name,
+            risk=risk,
+            args=args,
+            decision=decision,
+            decided_by=decided_by,
+            outcome=audit.outcome_of(result) if result is not None else "exception",
+        )
+
+
+def _gated_call(tool_name, raw_args, approver, reason, failed_steps):
+    # Returns (result, args as logged, decision, decided_by).
 
     # Is the tool name known?
     if tool_name not in _REGISTRY:
-        return {"error": f"Unknown tool: '{tool_name}'"}
+        return {"error": f"Unknown tool: '{tool_name}'", "kind": "validation"}, raw_args, "not_needed", None
 
     # Is the JSON valid?
     try:
         args_dict = json.loads(raw_args)
     except json.JSONDecodeError as e:
-        return {"error": f"Invalid JSON arguments: {e}"}
+        return {"error": f"Invalid JSON arguments: {e}", "kind": "validation"}, raw_args, "not_needed", None
 
     validator, fn_name = _REGISTRY[tool_name][:2]
 
@@ -126,9 +153,10 @@ def dispatch(
     try:
         validated = validator(**args_dict)
     except ValidationError as e:
-        return {"error": f"Argument validation failed: {e}"}
+        return {"error": f"Argument validation failed: {e}", "kind": "validation"}, args_dict, "not_needed", None
 
     args = validated.model_dump()
+    decision, decided_by = "not_needed", None
 
     # approval gate: reads pass, writes need an explicit yes
     if classify(tool_name) == WRITE:
@@ -138,10 +166,10 @@ def dispatch(
             reason=reason,
             failed_steps=failed_steps or [],
         )
-        decision, _ = _ask_approver(approver, request)
+        decision, decided_by = _ask_approver(approver, request)
         if decision != "approved":
-            return {"error": _DENIED_MESSAGE, "kind": "denied", "decision": decision}
+            return {"error": _DENIED_MESSAGE, "kind": "denied", "decision": decision}, args, decision, decided_by
 
     # calling the actual function now
     fn = getattr(_tools, fn_name)
-    return fn(**args)
+    return fn(**args), args, decision, decided_by

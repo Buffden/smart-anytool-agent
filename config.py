@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     # Approval gate
     approval_timeout_s: float = 120.0
+    audit_log_path: str = "logs/audit.jsonl"
 
     # Self-reflection
     retriever_max_retries: int = 3

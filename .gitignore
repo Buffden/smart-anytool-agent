@@ -33,6 +33,9 @@ Thumbs.db
 *.pkl
 *.bin
 
+# Audit log (local, append-only)
+logs/
+
 # Eval runs (keep only the run cited in docs)
 evals/results/*
 !evals/results/smart_eval_20261009_161745.json
