@@ -3,6 +3,7 @@ import re
 
 from openai import OpenAI
 
+from approval import Approver
 from config import settings
 from planner import Plan
 from validation import dispatch
@@ -74,7 +75,12 @@ def _is_failure(result) -> bool:
     return False
 
 
-def execute_plan(plan: Plan, stop_on_failure: bool = True) -> list[dict]:
+def execute_plan(
+    plan: Plan,
+    stop_on_failure: bool = True,
+    approver: Approver | None = None,
+    run_id: str | None = None,
+) -> list[dict]:
     results = []
 
     for step in plan.steps:
@@ -87,7 +93,13 @@ def execute_plan(plan: Plan, stop_on_failure: bool = True) -> list[dict]:
                 break
             continue
 
-        result = dispatch(step.tool, json.dumps(resolved_args))
+        result = dispatch(
+            step.tool,
+            json.dumps(resolved_args),
+            approver=approver,
+            reason=step.purpose,
+            run_id=run_id,
+        )
         results.append({"purpose": step.purpose, "tool": step.tool, "result": result})
 
         if _is_failure(result) and stop_on_failure:
