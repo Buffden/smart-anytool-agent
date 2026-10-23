@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     agent_db_dsn: str = "postgresql://agent_readonly:change_me@localhost:5433/ops_db"
     db_statement_timeout_ms: int = 5000
 
+    # Email tool (local outbox, no SMTP)
+    outbox_dir: str = "outbox"
+    email_sender: str = "agent@smart-anytool.local"
+
     # Agent loop
     agent_max_iterations: int = 5
 

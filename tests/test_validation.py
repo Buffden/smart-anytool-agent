@@ -169,6 +169,7 @@ _EXPECTED_RISK = {
     "get_chat_history": "read",
     "query_database": "read",
     "send_chat_message": "write",
+    "send_email": "write",
 }
 
 @pytest.mark.parametrize("schema", ALL_TOOLS, ids=lambda s: s["function"]["name"])

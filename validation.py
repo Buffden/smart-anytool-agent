@@ -48,6 +48,12 @@ class QueryDatabaseArgs(BaseModel):
     sql: str = Field(..., min_length=1, max_length=2000)
 
 
+class SendEmailArgs(BaseModel):
+    recipient: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    subject: str = Field(..., min_length=1, max_length=200)
+    body: str = Field(..., min_length=1, max_length=20000)
+
+
 READ = "read"
 WRITE = "write"
 
@@ -63,6 +69,7 @@ _REGISTRY: dict[str, tuple] = {
     "list_conversations": (ListConversationsArgs, "list_conversations", READ),
     "get_chat_history": (GetChatHistoryArgs, "get_chat_history", READ),
     "query_database": (QueryDatabaseArgs, "query_database", READ),
+    "send_email": (SendEmailArgs, "send_email", WRITE),
 }
 
 

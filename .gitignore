@@ -33,8 +33,9 @@ Thumbs.db
 *.pkl
 *.bin
 
-# Audit log (local, append-only)
+# Audit log (local, append-only) and email outbox
 logs/
+outbox/
 
 # Eval runs (keep only the run cited in docs)
 evals/results/*

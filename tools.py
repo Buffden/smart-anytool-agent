@@ -2,6 +2,9 @@ import httpx
 import ast
 import datetime
 import decimal
+import uuid
+from email.message import EmailMessage
+from pathlib import Path
 from ddgs import DDGS
 import psycopg
 from psycopg.rows import dict_row
@@ -171,3 +174,25 @@ def query_database(sql: str) -> dict:
     if not rows:
         return {"rows": [], "kind": "empty"}
     return {"rows": rows, "kind": "ok"}
+
+
+def send_email(recipient: str, subject: str, body: str) -> dict:
+    # Local outbox instead of SMTP: one .eml file per message, so a send is
+    # easy to verify (the file exists or it doesn't) and never reaches anyone.
+    message = EmailMessage()
+    message["To"] = recipient
+    message["From"] = settings.email_sender
+    message["Subject"] = subject
+    message.set_content(body)
+
+    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = Path(settings.outbox_dir) / f"{stamp}_{uuid.uuid4().hex[:8]}.eml"
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("x", encoding="utf-8") as f:
+            f.write(message.as_string())
+    except OSError as e:
+        return {"error": f"Could not write to the outbox: {e}", "kind": "transport"}
+
+    return {"sent": True, "recipient": recipient, "path": str(path)}
