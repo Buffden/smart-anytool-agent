@@ -106,3 +106,46 @@ def test_scripted_sequence_is_deterministic():
                 for _ in range(3)
             ]
         assert kinds == ["ok", "denied", "ok"]
+
+
+# CLI approver
+
+from approval import CliApprover
+
+
+def _cli(answer):
+    printed = []
+    approver = CliApprover(input_fn=lambda _prompt: answer, print_fn=printed.append)
+    return approver, printed
+
+
+def test_cli_approver_yes_approves():
+    approver, _ = _cli("yes")
+    decision = approver(ApprovalRequest(tool="send_email", args={"recipient": "a@b.co"}))
+    assert decision.approved is True
+    assert decision.by.startswith("cli:")
+
+
+def test_cli_approver_anything_else_declines():
+    for answer in ["y", "no", "", "YES please", "ok"]:
+        approver, _ = _cli(answer)
+        assert approver(ApprovalRequest(tool="send_email", args={})).approved is False
+
+
+def test_cli_approver_accepts_yes_with_whitespace_and_case():
+    approver, _ = _cli("  Yes \n")
+    assert approver(ApprovalRequest(tool="send_email", args={})).approved is True
+
+
+def test_cli_approver_shows_failed_steps_before_the_action():
+    approver, printed = _cli("no")
+    approver(ApprovalRequest(
+        tool="send_email",
+        args={"recipient": "ops@example.com", "body": "report"},
+        reason="send it",
+        failed_steps=[{"step": 2, "tool": "query_database", "purpose": "salaries", "error": "bad column"}],
+    ))
+    text = "\n".join(printed)
+    assert text.index("bad column") < text.index("Action: send_email")
+    assert "ops@example.com" in text
+    assert "send it" in text

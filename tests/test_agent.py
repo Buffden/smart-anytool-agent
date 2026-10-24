@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 from agent import solve
 
@@ -57,7 +57,9 @@ def test_single_tool_call_dispatched_correctly():
         with patch("agent.dispatch", return_value={"result": 42}) as mock_dispatch:
             solve("question", tools=[])
 
-    mock_dispatch.assert_called_once_with("calculator", '{"expression": "6*7"}')
+    mock_dispatch.assert_called_once_with(
+        "calculator", '{"expression": "6*7"}', approver=None, reason=ANY, run_id=None
+    )
 
 
 # tool results appended to conversation before next LLM call

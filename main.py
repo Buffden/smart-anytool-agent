@@ -2,6 +2,8 @@ import argparse
 import logging
 import sys
 
+from approval import CliApprover
+from audit import new_run_id
 from smart import self_awareness_check
 import retriever
 
@@ -19,6 +21,7 @@ def configure_logging(verbose: bool) -> None:
 
 def run_cli(verbose: bool) -> None:
     print("Smart AnyTool Agent  (type 'exit' or 'quit' to stop)\n")
+    approver = CliApprover()
 
     while True:
         try:
@@ -44,7 +47,9 @@ def run_cli(verbose: bool) -> None:
             else:
                 if verbose:
                     print(f"[SMART] Tool required. Reason: {result['reason']}")
-                answer = retriever.run(user_input)
+                # One run id per user turn: a turn is one question and every
+                # call made to answer it.
+                answer = retriever.run(user_input, approver=approver, run_id=new_run_id())
 
             print(f"Agent: {answer}\n")
 

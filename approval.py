@@ -1,3 +1,5 @@
+import getpass
+import json
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -33,3 +35,27 @@ class ScriptedApprover:
         self.requests.append(request)
         approved = self._answers.pop(0) if self._answers else False
         return Decision(approved=approved, by=self._by)
+
+
+class CliApprover:
+    """Shows the full pending action in the terminal and waits for 'yes'."""
+
+    def __init__(self, input_fn=input, print_fn=print):
+        self._input = input_fn
+        self._print = print_fn
+        self.by = f"cli:{getpass.getuser()}"
+
+    def __call__(self, request: ApprovalRequest) -> Decision:
+        self._print("\n=== Approval needed ===")
+        # Failed steps first, so they can't be missed under a long body.
+        if request.failed_steps:
+            self._print("WARNING: earlier steps in this run failed:")
+            for step in request.failed_steps:
+                self._print(f"  step {step['step']} ({step['tool']}, {step['purpose']}): {step['error']}")
+        self._print(f"Action: {request.tool}")
+        if request.reason:
+            self._print(f"Reason: {request.reason}")
+        self._print("Arguments:")
+        self._print(json.dumps(request.args, indent=2))
+        answer = self._input("Type 'yes' to approve, anything else declines: ")
+        return Decision(approved=answer.strip().lower() == "yes", by=self.by)

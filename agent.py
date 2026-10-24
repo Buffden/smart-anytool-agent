@@ -1,6 +1,7 @@
 import json
 import logging
 from openai import OpenAI
+from approval import Approver
 from config import settings
 from validation import dispatch
 
@@ -9,7 +10,12 @@ logger = logging.getLogger(__name__)
 client = OpenAI(api_key=settings.openai_api_key)
 
 
-def solve(question: str, tools: list[dict]) -> str | None:
+def solve(
+    question: str,
+    tools: list[dict],
+    approver: Approver | None = None,
+    run_id: str | None = None,
+) -> str | None:
     messages = [{"role": "user", "content": question}]
 
     for iteration in range(1, settings.agent_max_iterations + 1):
@@ -38,7 +44,13 @@ def solve(question: str, tools: list[dict]) -> str | None:
                 call.function.name,
                 call.function.arguments,
             )
-            result = dispatch(call.function.name, call.function.arguments)
+            result = dispatch(
+                call.function.name,
+                call.function.arguments,
+                approver=approver,
+                reason=f"Requested while answering: {question}",
+                run_id=run_id,
+            )
             messages.append({
                 "role": "tool",
                 "tool_call_id": call.id,

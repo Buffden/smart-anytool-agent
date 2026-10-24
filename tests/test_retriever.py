@@ -149,7 +149,7 @@ def test_run_retries_on_failure():
 def test_run_widens_to_all_tools_on_retry():
     calls = []
 
-    def capture_solve(question, tools):
+    def capture_solve(question, tools, **_):
         calls.append(tools)
         return None if len(calls) == 1 else "answer"
 
