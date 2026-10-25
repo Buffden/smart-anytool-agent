@@ -23,6 +23,12 @@ class Plan(BaseModel):
     steps: list[PlanStep] = Field(..., min_length=1)
 
 
+class Clarification(BaseModel):
+    # The planner's other legal output: a question back to the user when the
+    # request is too ambiguous to plan without guessing.
+    question: str = Field(..., min_length=1)
+
+
 class PlanError(Exception):
     pass
 
@@ -46,7 +52,7 @@ def _registered_tool_names() -> set[str]:
     return {schema["function"]["name"] for schema in _plannable_tools()}
 
 
-def generate_plan(request: str) -> Plan:
+def generate_plan(request: str) -> Plan | Clarification:
     system_prompt = _PROMPT_TEMPLATE.replace("<<TOOL_LISTING>>", _tool_listing())
 
     try:
@@ -64,6 +70,8 @@ def generate_plan(request: str) -> Plan:
 
     try:
         raw = json.loads(chat.choices[0].message.content)
+        if isinstance(raw, dict) and "clarification" in raw:
+            return Clarification(question=raw["clarification"])
         plan = Plan(**raw)
     except (json.JSONDecodeError, ValidationError, TypeError) as e:
         raise PlanError(f"Planner produced an invalid plan: {e}")

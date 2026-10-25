@@ -98,3 +98,23 @@ def test_send_is_audited_under_the_run_id():
     assert record["tool"] == "send_email"
     assert record["run_id"] == output["run_id"]
     assert record["decision"] == "approved"
+
+
+# clarification fallback
+
+from planner import Clarification
+
+
+def test_clarification_is_returned_and_nothing_runs():
+    approver = ScriptedApprover([True])
+    with patch("workflow.generate_plan", return_value=Clarification(question="Which team?")):
+        with patch("workflow.execute_plan") as mock_execute:
+            with patch("workflow.synthesize") as mock_synth:
+                output = run_workflow("send the report to the team", approver=approver, recipient="ops@example.com")
+
+    assert output["clarification"] == "Which team?"
+    mock_execute.assert_not_called()
+    mock_synth.assert_not_called()
+    assert approver.requests == []
+    assert _outbox() == []
+    assert _audit() == []

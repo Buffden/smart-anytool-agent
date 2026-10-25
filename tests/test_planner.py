@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -117,3 +118,26 @@ def test_generate_plan_rejects_a_write_step(tool):
     with patch("planner.client.chat.completions.create", return_value=make_openai_response(payload)):
         with pytest.raises(PlanError):
             generate_plan("email the report")
+
+
+# clarification fallback
+
+from planner import Clarification
+
+
+def test_generate_plan_returns_clarification():
+    payload = {"clarification": "Which team?"}
+    with patch("planner.client.chat.completions.create", return_value=make_openai_response(payload)):
+        result = generate_plan("send the report to the team")
+    assert result == Clarification(question="Which team?")
+
+
+def test_empty_clarification_is_invalid():
+    payload = {"clarification": ""}
+    with patch("planner.client.chat.completions.create", return_value=make_openai_response(payload)):
+        with pytest.raises(PlanError):
+            generate_plan("send the report to the team")
+
+
+def test_prompt_documents_the_clarification_shape():
+    assert '"clarification"' in Path("prompts/planner.txt").read_text()

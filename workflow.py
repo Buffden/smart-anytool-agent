@@ -3,7 +3,7 @@ import json
 from approval import Approver
 from audit import new_run_id
 from executor import _is_failure, execute_plan, synthesize
-from planner import generate_plan
+from planner import Clarification, generate_plan
 from validation import dispatch
 
 
@@ -56,6 +56,11 @@ def run_workflow(
 ) -> dict:
     run_id = new_run_id()
     plan = generate_plan(request)
+
+    # Ask instead of guessing: nothing is executed or sent.
+    if isinstance(plan, Clarification):
+        return {"clarification": plan.question, "run_id": run_id}
+
     results = execute_plan(plan, stop_on_failure=stop_on_failure, approver=approver, run_id=run_id)
     output = synthesize(request, results)
 
