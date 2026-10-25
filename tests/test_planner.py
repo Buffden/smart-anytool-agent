@@ -97,3 +97,23 @@ def test_generate_plan_accepts_step_referencing_earlier_result():
     with patch("planner.client.chat.completions.create", return_value=make_openai_response(payload)):
         plan = generate_plan("find the top department and list its employees")
     assert "{{step_1.rows.0.id}}" in plan.steps[1].args["sql"]
+
+
+# write tools stay out of plans
+
+from planner import _tool_listing
+
+
+def test_tool_listing_leaves_out_write_tools():
+    listing = _tool_listing()
+    assert "send_email" not in listing
+    assert "send_chat_message" not in listing
+    assert "query_database" in listing
+
+
+@pytest.mark.parametrize("tool", ["send_email", "send_chat_message"])
+def test_generate_plan_rejects_a_write_step(tool):
+    payload = {"steps": [{"tool": tool, "args": {}, "purpose": "send it"}]}
+    with patch("planner.client.chat.completions.create", return_value=make_openai_response(payload)):
+        with pytest.raises(PlanError):
+            generate_plan("email the report")
