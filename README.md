@@ -143,7 +143,7 @@ Decisions made for Phase 13:
 | Planned workflow with a separate planner and executor (`run_workflow`) | Engineering best practice | [x] |
 | In-house A/B eval of the SMART gate ([Phase 11](docs/phase-11-in-house-smart-evaluation.md)) | SMART (ACL 2025) | [x] |
 | Replication on the SMART paper's benchmarks ([Phase 12](docs/phase-12-smart-benchmark-replication.md)) | SMART (ACL 2025) | [ ] |
-| Human approval gate and audit log for write tools ([Phase 13](docs/phase-13-approval-gate-and-audit-log.md)) | Engineering best practice | [ ] |
+| Human approval gate and audit log for write tools ([Phase 13](docs/phase-13-approval-gate-and-audit-log.md)) | Engineering best practice | [x] |
 | MCP server and client, gated like local tools ([Phase 14](docs/phase-14-mcp-server-and-client.md)) | Model Context Protocol | [ ] |
 | SMART prompting baselines on all five paper test sets ([Phase 15](docs/phase-15-smart-prompting-baselines.md)) | SMART (ACL 2025) | [ ] |
 | SMARTAgent models, our own fine-tune, and confidence validation ([Phase 16](docs/phase-16-smartagent-models-and-training.md)) | SMART (ACL 2025) | [ ] |

@@ -44,17 +44,17 @@ Engineering Best Practice (OWASP Top 10 for LLM Applications: Excessive Agency, 
 
 ## Acceptance Criteria
 
-- [ ] Every registered tool has an explicit read/write classification, and a test fails if a new tool is registered without one
-- [ ] An unclassified tool is treated as a write
-- [ ] `send_email` writes exactly one file to the outbox and returns the usual result or `{"error": ..., "kind": ...}` shape
-- [ ] The gate sits inside `dispatch`, after validation and before the tool runs. Reads skip the approver, writes always reach it
-- [ ] The gate fails closed: no approver, an approver error, a timeout, or anything other than an explicit yes means `kind: denied` and no effect
-- [ ] The approver sees the tool, the resolved arguments, the reason, and any upstream step that failed
-- [ ] The audit log is JSON Lines, append-only, one record per dispatched call (reads, approvals, denials, validation failures), with a run id, and holds arguments but not full results
-- [ ] `run_workflow` proposes the send through the gate, and still returns the report when the send is denied
-- [ ] After a denial, the reactive loop makes no further write calls in that turn
-- [ ] An ambiguous request returns a clarification question and dispatches nothing
-- [ ] Tests cover the gate, the audit log, the workflow send path, and the clarification fallback
+- [x] Every registered tool has an explicit read/write classification, and a test fails if a new tool is registered without one
+- [x] An unclassified tool is treated as a write
+- [x] `send_email` writes exactly one file to the outbox and returns the usual result or `{"error": ..., "kind": ...}` shape
+- [x] The gate sits inside `dispatch`, after validation and before the tool runs. Reads skip the approver, writes always reach it
+- [x] The gate fails closed: no approver, an approver error, a timeout, or anything other than an explicit yes means `kind: denied` and no effect
+- [x] The approver sees the tool, the resolved arguments, the reason, and any upstream step that failed
+- [x] The audit log is JSON Lines, append-only, one record per dispatched call (reads, approvals, denials, validation failures), with a run id, and holds arguments but not full results
+- [x] `run_workflow` proposes the send through the gate, and still returns the report when the send is denied
+- [x] After a denial, the reactive loop makes no further write calls in that turn
+- [x] An ambiguous request returns a clarification question and dispatches nothing
+- [x] Tests cover the gate, the audit log, the workflow send path, and the clarification fallback
 
 ---
 
