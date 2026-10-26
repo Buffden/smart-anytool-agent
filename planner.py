@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from config import settings
 from schemas import ALL_TOOLS
+from validation import READ, classify
 
 client = OpenAI(api_key=settings.openai_api_key)
 
@@ -22,13 +23,25 @@ class Plan(BaseModel):
     steps: list[PlanStep] = Field(..., min_length=1)
 
 
+class Clarification(BaseModel):
+    # The planner's other legal output: a question back to the user when the
+    # request is too ambiguous to plan without guessing.
+    question: str = Field(..., min_length=1)
+
+
 class PlanError(Exception):
     pass
 
 
+def _plannable_tools() -> list[dict]:
+    # Plans gather data only. The workflow proposes its one write (the email)
+    # itself after synthesis, so write tools never appear in a plan.
+    return [s for s in ALL_TOOLS if classify(s["function"]["name"]) == READ]
+
+
 def _tool_listing() -> str:
     lines = []
-    for schema in ALL_TOOLS:
+    for schema in _plannable_tools():
         fn = schema["function"]
         params = ", ".join(fn["parameters"].get("properties", {}).keys())
         lines.append(f"- {fn['name']}({params}): {fn['description']}")
@@ -36,10 +49,10 @@ def _tool_listing() -> str:
 
 
 def _registered_tool_names() -> set[str]:
-    return {schema["function"]["name"] for schema in ALL_TOOLS}
+    return {schema["function"]["name"] for schema in _plannable_tools()}
 
 
-def generate_plan(request: str) -> Plan:
+def generate_plan(request: str) -> Plan | Clarification:
     system_prompt = _PROMPT_TEMPLATE.replace("<<TOOL_LISTING>>", _tool_listing())
 
     try:
@@ -57,6 +70,8 @@ def generate_plan(request: str) -> Plan:
 
     try:
         raw = json.loads(chat.choices[0].message.content)
+        if isinstance(raw, dict) and "clarification" in raw:
+            return Clarification(question=raw["clarification"])
         plan = Plan(**raw)
     except (json.JSONDecodeError, ValidationError, TypeError) as e:
         raise PlanError(f"Planner produced an invalid plan: {e}")
@@ -64,6 +79,6 @@ def generate_plan(request: str) -> Plan:
     known = _registered_tool_names()
     for step in plan.steps:
         if step.tool not in known:
-            raise PlanError(f"Plan references unknown tool: '{step.tool}'")
+            raise PlanError(f"Plan references an unknown or non-plannable tool: '{step.tool}'")
 
     return plan

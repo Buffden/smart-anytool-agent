@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch
 
+from approval import ScriptedApprover
 from validation import dispatch
 
 
@@ -117,12 +118,16 @@ def test_valid_analyze_text_call():
 
 def test_valid_send_chat_message_call_without_conversation_id():
     with patch("tools.send_chat_message", return_value={"conversationId": "abc-123"}) as mock:
-        dispatch("send_chat_message", json.dumps({"message": "hi"}))
+        dispatch("send_chat_message", json.dumps({"message": "hi"}), approver=ScriptedApprover([True]))
     mock.assert_called_once_with(message="hi", conversation_id=None)
 
 def test_valid_send_chat_message_call_with_conversation_id():
     with patch("tools.send_chat_message", return_value={"conversationId": "abc-123"}) as mock:
-        dispatch("send_chat_message", json.dumps({"message": "hi", "conversation_id": "abc-123"}))
+        dispatch(
+            "send_chat_message",
+            json.dumps({"message": "hi", "conversation_id": "abc-123"}),
+            approver=ScriptedApprover([True]),
+        )
     mock.assert_called_once_with(message="hi", conversation_id="abc-123")
 
 def test_valid_list_conversations_call():
@@ -146,3 +151,41 @@ def test_error_and_success_are_both_dicts():
         success_result = dispatch("get_weather", json.dumps({"location": "Tokyo"}))
     assert isinstance(error_result, dict)
     assert isinstance(success_result, dict)
+
+
+# risk classification
+
+import pytest
+import validation
+from schemas import ALL_TOOLS
+
+_EXPECTED_RISK = {
+    "get_weather": "read",
+    "web_search": "read",
+    "calculator": "read",
+    "analyze_text": "read",
+    "classify_text": "read",
+    "list_conversations": "read",
+    "get_chat_history": "read",
+    "query_database": "read",
+    "send_chat_message": "write",
+    "send_email": "write",
+}
+
+@pytest.mark.parametrize("schema", ALL_TOOLS, ids=lambda s: s["function"]["name"])
+def test_every_schema_tool_has_an_explicit_classification(schema):
+    name = schema["function"]["name"]
+    entry = validation._REGISTRY[name]
+    assert len(entry) == 3, f"{name} is registered without a risk classification"
+    assert entry[2] in {validation.READ, validation.WRITE}
+    assert entry[2] == _EXPECTED_RISK[name]
+
+def test_registry_and_expected_table_cover_the_same_tools():
+    assert set(validation._REGISTRY) == set(_EXPECTED_RISK)
+
+def test_unclassified_tool_is_treated_as_write():
+    with patch.dict(validation._REGISTRY, {"dummy": (validation.CalculatorArgs, "calculator")}):
+        assert validation.classify("dummy") == validation.WRITE
+
+def test_unknown_tool_is_treated_as_write():
+    assert validation.classify("never_registered") == validation.WRITE

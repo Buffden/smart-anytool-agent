@@ -226,6 +226,37 @@ QUERY_DATABASE_SCHEMA = {
     },
 }
 
+SEND_EMAIL_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "send_email",
+        "description": (
+            "Use this tool to send an email to a specific address. This is a "
+            "write action: a human must approve it before it is delivered, "
+            "and a declined send is final. Do NOT use it to talk to the "
+            "backend's chat assistant, and do NOT guess a recipient address."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "recipient": {
+                    "type": "string",
+                    "description": "One email address, e.g. 'ops@example.com'.",
+                },
+                "subject": {
+                    "type": "string",
+                    "description": "A short subject line.",
+                },
+                "body": {
+                    "type": "string",
+                    "description": "The plain-text body of the email.",
+                },
+            },
+            "required": ["recipient", "subject", "body"],
+        },
+    },
+}
+
 TOOL_CATEGORIES: dict[str, list[dict]] = {
     "data_lookup": [WEATHER_SCHEMA, WEB_SEARCH_SCHEMA],
     "computation": [CALCULATOR_SCHEMA],
@@ -237,6 +268,7 @@ TOOL_CATEGORIES: dict[str, list[dict]] = {
         GET_CHAT_HISTORY_SCHEMA,
     ],
     "database": [QUERY_DATABASE_SCHEMA],
+    "messaging": [SEND_EMAIL_SCHEMA],
 }
 
 ALL_TOOLS: list[dict] = [

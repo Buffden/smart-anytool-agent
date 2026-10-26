@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 from openai import OpenAI
+from approval import Approver
 from config import settings
 from schemas import ALL_TOOLS, TOOL_CATEGORIES
 import agent
@@ -40,11 +41,11 @@ def filter_tools(question: str) -> list[dict]:
         return ALL_TOOLS
 
 
-def run(question: str) -> str:
+def run(question: str, approver: Approver | None = None, run_id: str | None = None) -> str:
     tools = filter_tools(question)
 
     for attempt in range(1, settings.retriever_max_retries + 1):
-        result = agent.solve(question, tools)
+        result = agent.solve(question, tools, approver=approver, run_id=run_id)
 
         if result is not None:
             if attempt > 1:

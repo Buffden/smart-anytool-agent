@@ -48,9 +48,9 @@ def _counting_create(self, *args, **kwargs):
     return response
 
 
-def _counting_dispatch(name, raw_args):
+def _counting_dispatch(name, raw_args, **kwargs):
     counters.tool_calls.append(name)
-    return _original_dispatch(name, raw_args)
+    return _original_dispatch(name, raw_args, **kwargs)
 
 
 Completions.create = _counting_create

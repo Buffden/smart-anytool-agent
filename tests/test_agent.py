@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 from agent import solve
 
@@ -57,7 +57,9 @@ def test_single_tool_call_dispatched_correctly():
         with patch("agent.dispatch", return_value={"result": 42}) as mock_dispatch:
             solve("question", tools=[])
 
-    mock_dispatch.assert_called_once_with("calculator", '{"expression": "6*7"}')
+    mock_dispatch.assert_called_once_with(
+        "calculator", '{"expression": "6*7"}', approver=None, reason=ANY, run_id=None
+    )
 
 
 # tool results appended to conversation before next LLM call
@@ -176,3 +178,69 @@ def test_partial_failure_still_appends_all_results_and_continues():
     tool_messages = [m for m in captured[1] if isinstance(m, dict) and m.get("role") == "tool"]
     assert len(tool_messages) == 2
 
+
+
+# a denial is final for the rest of the turn
+
+from approval import ScriptedApprover
+
+
+def test_denial_blocks_a_different_write_in_the_same_turn():
+    first = make_response(tool_calls=[make_tool_call(
+        "send_email", '{"recipient": "a@b.co", "subject": "s", "body": "b"}', call_id="c1")])
+    second = make_response(tool_calls=[make_tool_call(
+        "send_chat_message", '{"message": "b"}', call_id="c2")])
+    final = make_response(content="The email was declined.", tool_calls=None)
+    approver = ScriptedApprover([False, True])
+
+    with patch("agent.client.chat.completions.create", side_effect=[first, second, final]):
+        with patch("tools.send_chat_message") as mock_chat:
+            result = solve("email a@b.co", tools=[], approver=approver)
+
+    mock_chat.assert_not_called()
+    assert len(approver.requests) == 1
+    assert result == "The email was declined."
+
+
+def test_denial_blocks_a_retry_of_the_same_write():
+    call = '{"recipient": "a@b.co", "subject": "s", "body": "b"}'
+    first = make_response(tool_calls=[make_tool_call("send_email", call, call_id="c1")])
+    retry = make_response(tool_calls=[make_tool_call("send_email", call, call_id="c2")])
+    final = make_response(content="declined", tool_calls=None)
+    approver = ScriptedApprover([False, True])
+
+    with patch("agent.client.chat.completions.create", side_effect=[first, retry, final]):
+        solve("email a@b.co", tools=[], approver=approver)
+
+    assert len(approver.requests) == 1
+
+
+def test_reads_still_run_after_a_denial():
+    first = make_response(tool_calls=[make_tool_call(
+        "send_email", '{"recipient": "a@b.co", "subject": "s", "body": "b"}', call_id="c1")])
+    read = make_response(tool_calls=[make_tool_call("calculator", '{"expression": "1+1"}', call_id="c2")])
+    final = make_response(content="2", tool_calls=None)
+
+    with patch("agent.client.chat.completions.create", side_effect=[first, read, final]):
+        with patch("tools.calculator", return_value={"result": 2}) as mock_calc:
+            solve("q", tools=[], approver=ScriptedApprover([False]))
+
+    mock_calc.assert_called_once()
+
+
+def test_denial_result_tells_the_model_it_is_final():
+    first = make_response(tool_calls=[make_tool_call(
+        "send_email", '{"recipient": "a@b.co", "subject": "s", "body": "b"}', call_id="c1")])
+    final = make_response(content="declined", tool_calls=None)
+    captured = []
+
+    def capture(**kwargs):
+        captured.append([m for m in kwargs["messages"] if isinstance(m, dict) and m.get("role") == "tool"])
+        return [first, final][len(captured) - 1]
+
+    with patch("agent.client.chat.completions.create", side_effect=capture):
+        solve("q", tools=[], approver=ScriptedApprover([False]))
+
+    [tool_message] = captured[1]
+    assert '"kind": "denied"' in tool_message["content"]
+    assert "final" in tool_message["content"]

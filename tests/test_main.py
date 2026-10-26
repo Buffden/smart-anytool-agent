@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import main
 
@@ -106,7 +106,17 @@ def test_tool_path_calls_retriever():
         with patch("main.self_awareness_check", return_value=smart_needs_tool()):
             with patch("main.retriever.run", return_value="Tokyo is 27C") as mock_retriever:
                 main.run_cli(verbose=False)
-    mock_retriever.assert_called_once_with("What is the weather in Tokyo?")
+    mock_retriever.assert_called_once_with("What is the weather in Tokyo?", approver=ANY, run_id=ANY)
+
+def test_each_turn_gets_its_own_run_id():
+    inputs = iter(["first", "second", "exit"])
+    with patch("builtins.input", side_effect=inputs):
+        with patch("main.self_awareness_check", return_value=smart_needs_tool()):
+            with patch("main.retriever.run", return_value="ok") as mock_retriever:
+                main.run_cli(verbose=False)
+    run_ids = [c.kwargs["run_id"] for c in mock_retriever.call_args_list]
+    assert len(run_ids) == 2
+    assert run_ids[0] != run_ids[1]
 
 def test_retriever_answer_is_printed(capsys):
     inputs = iter(["What is the weather in Tokyo?", "exit"])

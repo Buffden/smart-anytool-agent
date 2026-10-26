@@ -182,6 +182,10 @@ def test_database_contains_query_database():
     names = [s["function"]["name"] for s in TOOL_CATEGORIES["database"]]
     assert "query_database" in names
 
+def test_messaging_contains_send_email():
+    names = [s["function"]["name"] for s in TOOL_CATEGORIES["messaging"]]
+    assert names == ["send_email"]
+
 # ALL_TOOLS flat list
 
 def test_all_tools_contains_every_registered_tool():
@@ -190,6 +194,7 @@ def test_all_tools_contains_every_registered_tool():
         "get_weather", "calculator", "web_search",
         "analyze_text", "classify_text", "send_chat_message",
         "list_conversations", "get_chat_history", "query_database",
+        "send_email",
     }
 
 def test_all_tools_no_duplicates():
