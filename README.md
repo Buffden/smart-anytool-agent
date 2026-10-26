@@ -93,6 +93,35 @@ Agent: [SMART] Tool required - requires real company data.
 
 The `text_intelligence` category requires the `ai-text-intelligence-dashboard` Spring Boot backend running on `http://localhost:8080` - see `config.py`'s `backend_base_url`. The `database` category requires Postgres running (`docker compose up -d`) with the `agent_readonly` role created - see `db/seed.sql` and `config.py`'s `agent_db_dsn`.
 
+### Write actions and approval
+
+Every tool is classified as read or write in `validation._REGISTRY`. Reads run as before. Writes (`send_chat_message`, `send_email`) stop inside `dispatch` and only run on an explicit `yes` from an approver; anything else (no approver, an error, a timeout after `approval_timeout_s`, any other answer) comes back as `{"error": ..., "kind": "denied"}`. In the CLI the approver is the terminal:
+
+```text
+You: Email ops@example.com that the deploy finished.
+
+=== Approval needed ===
+Action: send_email
+Reason: Requested while answering: Email ops@example.com that the deploy finished.
+Arguments:
+{
+  "recipient": "ops@example.com",
+  "subject": "Deploy finished",
+  "body": "The deploy finished."
+}
+Type 'yes' to approve, anything else declines:
+```
+
+`send_email` does not use SMTP. It writes one `.eml` file per message to `outbox/`. Every dispatched call, approved or not, is appended to `logs/audit.jsonl` with a run id, the tool, its classification, the arguments (never the result), the decision, who made it, and the outcome kind. Both directories are ignored by git.
+
+Decisions made for Phase 13:
+
+- **Recipient**: `run_workflow(..., recipient=...)` takes it as a parameter. The model never picks the address, so a tool result can't redirect the email, and with no recipient no send is proposed.
+- **Approver interface**: a callable that takes an `ApprovalRequest` and returns a `Decision(approved, by)`, so the audit log gets the "who" from the approver itself. `CliApprover` for the terminal, `ScriptedApprover` for tests.
+- **Run id scope**: one per `run_workflow` call, and one per user turn in the CLI.
+- **Denial in the workflow**: the report is still returned, with `email.status = "not_sent"`. In the reactive loop a denial also blocks every later write in that turn without asking again.
+- **Plans stay read-only**: write tools are left out of the planner's tool list and a plan that names one is rejected. The workflow's only write is the send it proposes after synthesis. An ambiguous request gets `{"clarification": ...}` back and nothing runs.
+
 ---
 
 ## Implementation Plan
